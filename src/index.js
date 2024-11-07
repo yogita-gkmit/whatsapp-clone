@@ -5,6 +5,8 @@ const app = express();
 const { sequelize } = require('./models/');
 const PORT = process.env.PORT || 3000;
 
+const { connectToRedis } = require('./config/redis');
+
 app.use(express.json());
 
 const startServer = async function () {
@@ -16,8 +18,8 @@ const startServer = async function () {
 		console.log('Error: ', err.message);
 	}
 };
-
 startServer();
+connectToRedis();
 
 app.get('/health-check', (req, res) => {
 	try {
