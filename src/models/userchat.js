@@ -37,6 +37,8 @@ module.exports = (sequelize, DataTypes) => {
     {
       sequelize,
       modelName: 'UserChat',
+      tableName: 'users_chats',
+      paranoid: true,
     },
   );
   return UserChat;

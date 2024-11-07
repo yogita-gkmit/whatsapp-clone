@@ -9,10 +9,17 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      // User.belongsToMany(models.Chat,
-      //   { through: 'messages',
-      //     foreignKey: 'chat_id',
-      //   });
+      User.belongsToMany(models.Chat, {
+        through: 'messages',
+        foreignKey: 'user_id',
+        other_key: 'chat_id',
+      });
+
+      User.belongsToMany(models.Chat, {
+        through: 'users_chats',
+        foreignKey: 'user_id',
+        other_key: 'chat_id',
+      });
     }
   }
   User.init(

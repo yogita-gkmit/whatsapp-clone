@@ -17,14 +17,14 @@ module.exports = {
         },
         allowNull: false,
       },
-      // chat_id: {
-      //   type: Sequelize.UUID,
-      //   references: {
-      //     model: 'chats',
-      //     key: 'id',
-      //   },
-      //   allowNull: false,
-      // },
+      chat_id: {
+        type: Sequelize.UUID,
+        references: {
+          model: 'chats',
+          key: 'id',
+        },
+        allowNull: false,
+      },
       is_admin: {
         type: Sequelize.BOOLEAN,
         defaultValue: false,
