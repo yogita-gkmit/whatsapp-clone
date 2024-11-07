@@ -2,7 +2,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('users', {
+    await queryInterface.createTable('chats', {
       id: {
         allowNull: false,
         defaultValue: Sequelize.literal('uuid_generate_v4()'),
@@ -17,13 +17,8 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: false,
       },
-      about: {
+      description: {
         type: Sequelize.STRING,
-        allowNull: false,
-      },
-      email: {
-        type: Sequelize.STRING,
-        unique: true,
         allowNull: false,
       },
       createdAt: {
@@ -42,6 +37,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('users');
+    await queryInterface.dropTable('chats');
   },
 };

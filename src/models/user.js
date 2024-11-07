@@ -13,17 +13,15 @@ module.exports = (sequelize, DataTypes) => {
       //   { through: 'messages',
       //     foreignKey: 'chat_id',
       //   });
-      // Parent.hasMany(Child, { foreignKey: 'Parent_parentId' });
-      // Child.belongsTo(Parent, { foreignKey: 'Parent_parentId' });
     }
   }
   User.init(
     {
       id: {
         allowNull: false,
-        defaultValue: DataTypes.literal('uuid_generate_v4()'),
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
-        type: DataTypes.DataTypes.UUID,
+        type: DataTypes.UUID,
       },
       name: {
         type: DataTypes.STRING,

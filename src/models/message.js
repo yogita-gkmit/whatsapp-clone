@@ -9,16 +9,16 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      Message.belongsToMany(models.User, { foreignKey: 'user_id' });
+      // Message.belongsToMany(models.User, { foreignKey: 'user_id' });
     }
   }
   Message.init(
     {
       id: {
         allowNull: false,
-        defaultValue: DataTypes.literal('uuid_generate_v4()'),
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
-        type: DataTypes.DataTypes.UUID,
+        type: DataTypes.UUID,
       },
       user_id: {
         type: DataTypes.UUID,
