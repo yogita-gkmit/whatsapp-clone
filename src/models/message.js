@@ -1,7 +1,7 @@
 'use strict';
 const { Model } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
-  class User extends Model {
+  class Message extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
@@ -9,15 +9,10 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      // User.belongsToMany(models.Chat,
-      //   { through: 'messages',
-      //     foreignKey: 'chat_id',
-      //   });
-      // Parent.hasMany(Child, { foreignKey: 'Parent_parentId' });
-      // Child.belongsTo(Parent, { foreignKey: 'Parent_parentId' });
+      Message.belongsToMany(models.User, { foreignKey: 'user_id' });
     }
   }
-  User.init(
+  Message.init(
     {
       id: {
         allowNull: false,
@@ -25,30 +20,29 @@ module.exports = (sequelize, DataTypes) => {
         primaryKey: true,
         type: DataTypes.DataTypes.UUID,
       },
-      name: {
-        type: DataTypes.STRING,
+      user_id: {
+        type: DataTypes.UUID,
+        primaryKey: true,
         allowNull: false,
       },
-      image: {
-        type: DataTypes.STRING,
+      chat_id: {
+        type: DataTypes.UUID,
+        primaryKey: true,
         allowNull: false,
       },
-      about: {
+      message: {
         type: DataTypes.STRING,
-        allowNull: false,
       },
-      email: {
+      media: {
         type: DataTypes.STRING,
-        unique: true,
-        allowNull: false,
       },
     },
     {
       sequelize,
-      modelName: 'User',
-      tableName: 'users',
+      modelName: 'Message',
+      tableName: 'messages',
       paranoid: true,
     },
   );
-  return User;
+  return Message;
 };
