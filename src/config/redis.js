@@ -1,17 +1,35 @@
-const { createClient } = require('redis');
+// const redis = require('redis');
+const Redis = require('ioredis');
+const dotenv = require('dotenv');
+dotenv.config();
 
-const redisClient = createClient();
+const reddis = new Redis({
+  host: 'localhost',
+  port: 6379,
+});
 
 async function connectToRedis() {
-  try {
-    redisClient.on('error', err => {
-      console.log('Error connecting redis client', err);
-    });
-
-    await redisClient.connect();
-    console.log('Redis connected successfully');
-  } catch (err) {
-    console.log('Error connecting redis', err);
-  }
+  reddis.on('connect', () => {
+    console.log('Connected to Redis successfully');
+  });
+  reddis.on('error', err => {
+    console.error('Redis connection error:', err);
+  });
 }
-module.exports = { redisClient, connectToRedis };
+
+const testRedisConnection = async () => {
+  try {
+    // Set a value in Redis
+    await reddis.set('myKey', 'Hello, Redis!');
+    // Get the value from Redis
+    const value = await reddis.get('myKey');
+    console.log('Retrieved from Redis:', value); // Should output: Hello, Redis!
+  } catch (err) {
+    console.error('Error interacting with Redis:', err);
+  } finally {
+    // Always close the connection when you're done
+    reddis.quit();
+  }
+};
+
+module.exports = { connectToRedis, testRedisConnection };
