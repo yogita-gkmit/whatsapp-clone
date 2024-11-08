@@ -17,19 +17,19 @@ async function connectToRedis() {
   });
 }
 
-const testRedisConnection = async () => {
-  try {
-    // Set a value in Redis
-    await reddis.set('myKey', 'Hello, Redis!');
-    // Get the value from Redis
-    const value = await reddis.get('myKey');
-    console.log('Retrieved from Redis:', value); // Should output: Hello, Redis!
-  } catch (err) {
-    console.error('Error interacting with Redis:', err);
-  } finally {
-    // Always close the connection when you're done
-    reddis.quit();
-  }
-};
+// const testRedisConnection = async () => {
+//   try {
+//     // Set a value in Redis
+//     await reddis.set('myKey', 'Hello, Redis!');
+//     // Get the value from Redis
+//     const value = await reddis.get('myKey');
+//     console.log('Retrieved from Redis:', value); // Should output: Hello, Redis!
+//   } catch (err) {
+//     console.error('Error interacting with Redis:', err);
+//   } finally {
+//     // Always close the connection when you're done
+//     reddis.quit();
+//   }
+// };
 
-module.exports = { connectToRedis, testRedisConnection };
+module.exports = { connectToRedis, reddis };
