@@ -1,8 +1,15 @@
 const express = require('express');
-const routes = express.Router();
+const router = express.Router();
+const { uploads } = require('../middlewares/multer.middleware');
 
-consr {} = require('./controllers/auth.controller')
+const {
+	// register,
+	sendOTP,
+	// verifyOTP,
+} = require('../controllers/auth.controller');
 
-routes.post('/login');
+router.post('/send-otp', sendOTP);
+// router.post('/verify-otp', verifyOTP);
+// router.post('/register', register, uploads.single('picture'));
 
 module.exports = router;

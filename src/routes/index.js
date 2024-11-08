@@ -1,6 +1,6 @@
 const fs = require('fs');
 const { resolve } = require('path');
-const routesFolder = resolve('./routes');
+const routesFolder = resolve('./src/routes');
 
 function camelCaseToDash(myStr) {
   return myStr.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
