@@ -13,6 +13,14 @@ module.exports = {
     database: process.env.DATABASE,
     host: process.env.HOST,
     dialect: 'postgres',
+    define: {
+      paranoid: true,
+      underscored: true,
+      timestamps: true,
+      createdAt: 'created_at',
+      updatedAt: 'updated_at',
+      deletedAt: 'deleted_at',
+    },
   },
   test: {
     username: process.env.USERNAME,
@@ -20,5 +28,13 @@ module.exports = {
     database: process.env.DATABASE,
     host: process.env.HOST,
     dialect: 'postgres',
+    define: {
+      paranoid: true,
+      underscored: true,
+      timestamps: true,
+      createdAt: 'created_at',
+      updatedAt: 'updated_at',
+      deletedAt: 'deleted_at',
+    },
   },
 };
