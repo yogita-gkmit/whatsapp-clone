@@ -63,16 +63,24 @@ async function verifyOtp(email, otp) {
 	return token;
 }
 
-async function create(name, image, about, email, otp) {
-	const record = await client.get(email);
-	if (!record) throw new Error('Invalid or Expired Otp');
-
-	if (record === otp) {
-		const user = new User({ name, image, about, email });
-		await user.save();
-	} else {
-		throw new Error('Incorrect Otp Entered');
+async function create(name, image, about, email) {
+	if (await validUser(email)) {
+		throw new Error('User already registered');
 	}
+	await User.create({
+		name,
+		image,
+		email,
+		about,
+	});
 }
+
+// async function authUser(email, password, name, address) {
+// 	const salt = await bcrypt.genSalt(10);
+// 	const hashedPassword = await bcrypt.hash(password, salt);
+
+// 	const user = new Users({ email, name, address, password: hashedPassword });
+// 	await user.save();
+// }
 
 module.exports = { create, sendOtp, verifyOtp };
