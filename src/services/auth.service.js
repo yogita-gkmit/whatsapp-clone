@@ -1,9 +1,10 @@
-const User = require('../models/User');
+const User = require('../models').User;
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const otpGenerator = require('otp-generator');
 const { reddis } = require('../config/redis');
 const { transporter, mailOptions } = require('../utils/email.util');
+const { validUser } = require('../helpers/auth.helper');
 
 const dotenv = require('dotenv');
 dotenv.config();
@@ -41,6 +42,24 @@ async function sendToMail(email) {
 	return { message: 'otp sent successfully' };
 }
 
+async function verify(email, otp) {
+	if (!(await validUser(email))) {
+		return { message: 'User is not registered' };
+	}
+	const user = await User.findOne({ where: { email: email } });
+
+	const storedOTP = await reddis.get(email);
+
+	if (!(storedOTP == otp)) {
+		return { message: 'OTP did not matched' };
+	}
+	reddis.del(email);
+	const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
+		expiresIn: '1h',
+	});
+	return token;
+}
+
 async function create(name, image, about, email, otp) {
 	const record = await client.get(email);
 	if (!record) throw new Error('Invalid or Expired Otp');
@@ -53,4 +72,4 @@ async function create(name, image, about, email, otp) {
 	}
 }
 
-module.exports = { create, sendToMail, generateOtp };
+module.exports = { create, sendToMail, generateOtp, verify };
