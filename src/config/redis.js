@@ -1,11 +1,11 @@
-// const redis = require('redis');
 const Redis = require('ioredis');
 const dotenv = require('dotenv');
 dotenv.config();
 
 const reddis = new Redis({
-  host: 'localhost',
-  port: 6379,
+  // host: 'localhost',
+  // port: 6379,
+  url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
 });
 
 async function connectToRedis() {
