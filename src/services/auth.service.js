@@ -5,6 +5,7 @@ const otpGenerator = require('otp-generator');
 const { reddis } = require('../config/redis');
 const { transporter, mailOptions } = require('../utils/email.util');
 const { validUser } = require('../helpers/auth.helper');
+const { addTokenToBlacklist } = require('../helpers/redis.helper');
 
 const dotenv = require('dotenv');
 dotenv.config();
@@ -75,12 +76,23 @@ async function create(name, image, about, email) {
 	});
 }
 
-// async function authUser(email, password, name, address) {
-// 	const salt = await bcrypt.genSalt(10);
-// 	const hashedPassword = await bcrypt.hash(password, salt);
+async function remove(token) {
+	if (!token) {
+		throw new Error('Token is required for logout');
+	}
+	try {
+		const decodedToken = jwt.decode(token);
+		if (!decodedToken) {
+			throw new Error('Invalid token');
+		}
+		const expiresIn = 3600;
+		await addTokenToBlacklist(token, expiresIn);
+		console.log('Token added to blacklist');
+		return { message: 'Logged out successfully' };
+	} catch (error) {
+		console.log(error);
+		throw new Error('Logout failed');
+	}
+}
 
-// 	const user = new Users({ email, name, address, password: hashedPassword });
-// 	await user.save();
-// }
-
-module.exports = { create, sendOtp, verifyOtp };
+module.exports = { create, sendOtp, verifyOtp, remove };
