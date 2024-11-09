@@ -21,7 +21,10 @@ async function generateOtp() {
 
 	return otp;
 }
-async function sendToMail(email) {
+async function sendOtp(email) {
+	if (!(await validUser(email))) {
+		throw new Error('User is not registered');
+	}
 	const otp = await generateOtp();
 	await reddis.set(email, otp);
 
@@ -42,7 +45,7 @@ async function sendToMail(email) {
 	return { message: 'otp sent successfully' };
 }
 
-async function verify(email, otp) {
+async function verifyOtp(email, otp) {
 	if (!(await validUser(email))) {
 		return { message: 'User is not registered' };
 	}
@@ -72,4 +75,4 @@ async function create(name, image, about, email, otp) {
 	}
 }
 
-module.exports = { create, sendToMail, generateOtp, verify };
+module.exports = { create, sendOtp, verifyOtp };

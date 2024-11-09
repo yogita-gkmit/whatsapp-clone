@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models').User;
-const { sendToMail, verify } = require('../services/auth.service');
+const { sendOtp, verifyOtp } = require('../services/auth.service');
 const { validUser } = require('../helpers/auth.helper');
 
 async function register(req, res) {}
@@ -9,10 +9,7 @@ async function sendOTP(req, res) {
 	try {
 		const { email } = req.body;
 
-		if (!(await validUser(email))) {
-			return res.status(401).json({ message: 'User is not registered' });
-		}
-		const response = await sendToMail(email);
+		const response = await sendOtp(email);
 		res.status(200).json({
 			success: true,
 			message: response,
@@ -26,7 +23,7 @@ async function sendOTP(req, res) {
 async function verifyOTP(req, res) {
 	try {
 		const { email, otp } = req.body;
-		const token = await verify(email, otp);
+		const token = await verifyOtp(email, otp);
 
 		res.status(200).json({ message: 'User verified successfully', token });
 	} catch (error) {
