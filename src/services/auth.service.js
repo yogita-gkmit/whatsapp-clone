@@ -43,7 +43,7 @@ async function sendOtp(email) {
 		}
 	});
 
-	return { message: `otp sent successfully ${otp}` };
+	return { message: 'otp sent successfully', otp };
 }
 
 async function verifyOtp(email, otp) {
