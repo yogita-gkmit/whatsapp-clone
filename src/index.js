@@ -10,8 +10,9 @@ const PORT = process.env.PORT || 3000;
 const { connectToRedis } = require('./config/redis');
 
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 registerRoutes(app);
+app.use(express.urlencoded({ extended: true }));
+
 const startServer = async function () {
 	try {
 		await sequelize.authenticate();
