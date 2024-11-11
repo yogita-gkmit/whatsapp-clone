@@ -49,4 +49,25 @@ async function createGroup(
 	return chat;
 }
 
-module.exports = { createSingle, createGroup };
+async function find(chat_id, id) {
+	console.log(chat_id);
+	const chat = await Chat.findByPk(chat_id);
+	if (chat.type === 'group') {
+		return chat;
+	} else {
+		const userIds = await UserChat.findAll({ chat_id: chat_id });
+		console.log(userIds);
+		let otherUser;
+		userIds.forEach(userId => {
+			if (userId.id !== id) {
+				otherUser = userId;
+			}
+		});
+		console.log(otherUser.id);
+
+		const user = await User.findByPk(otherUser.id);
+		return { user, chat };
+	}
+}
+
+module.exports = { createSingle, createGroup, find };

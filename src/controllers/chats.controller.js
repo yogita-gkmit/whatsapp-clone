@@ -1,4 +1,8 @@
-const { createSingle, createGroup } = require('../services/chats.service');
+const {
+	createSingle,
+	createGroup,
+	find,
+} = require('../services/chats.service');
 
 async function createChat(req, res) {
 	try {
@@ -27,4 +31,18 @@ async function createChat(req, res) {
 	}
 }
 
-module.exports = { createChat };
+async function getChat(req, res) {
+	try {
+		const id = req.user.id;
+		const { chat_id } = req.params;
+		const response = await find(chat_id, id);
+		res
+			.status(200)
+			.json({ message: 'successfully getting the chat', response });
+	} catch (error) {
+		console.log('Error getting the chat', error);
+		res.status(400).json({ message: error.message });
+	}
+}
+
+module.exports = { createChat, getChat };
