@@ -26,6 +26,11 @@ module.exports = {
         allowNull: false,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
       },
+      type: {
+        type: Sequelize.ENUM,
+        values: ['one-to-one', 'group'],
+        defaultValue: 'one-to-one',
+      },
       updated_at: {
         type: Sequelize.DATE,
         allowNull: false,

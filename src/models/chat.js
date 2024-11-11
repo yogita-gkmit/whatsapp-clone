@@ -43,6 +43,11 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: false,
       },
+      type: {
+        type: DataTypes.ENUM,
+        values: ['one-to-one', 'group'],
+        defaultValue: 'one-to-one',
+      },
     },
     {
       sequelize,
