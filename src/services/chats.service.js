@@ -111,7 +111,7 @@ async function remove(chat_id, id) {
 	} else if (usersChat?.is_admin === false) {
 		throw new Error('User is not admin');
 	}
-
+	await UserChat.destroy({ where: { chat_id: chat_id } });
 	await chat.destroy();
 }
 
