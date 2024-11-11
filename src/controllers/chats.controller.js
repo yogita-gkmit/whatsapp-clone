@@ -3,6 +3,7 @@ const {
 	createGroup,
 	find,
 	edit,
+	remove,
 } = require('../services/chats.service');
 
 async function createChat(req, res) {
@@ -60,4 +61,16 @@ async function editChat(req, res) {
 	}
 }
 
-module.exports = { createChat, getChat, editChat };
+async function deleteChat(req, res) {
+	try {
+		const { chat_id } = req.params;
+		const id = req.user.id;
+		await remove(chat_id, id);
+		res.status(202).json({ message: 'successfully deleted the group chat' });
+	} catch (error) {
+		console.log('Error deleting the chat', error);
+		res.status(400).json({ message: error.message });
+	}
+}
+
+module.exports = { createChat, getChat, editChat, deleteChat };
