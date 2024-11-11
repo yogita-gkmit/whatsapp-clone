@@ -115,4 +115,33 @@ async function remove(chat_id, id) {
 	await chat.destroy();
 }
 
-module.exports = { createSingle, createGroup, find, edit, remove };
+async function editrole(chat_id, id, user_ids) {
+	const chat = await Chat.findByPk(chat_id);
+	if (!chat) throw new Error('Chat does not exist');
+	if (chat.type === 'one-to-one')
+		throw new Error('Not applicable for one to one conversation');
+	console.log(chat_id, id);
+
+	const usersChat = await UserChat.findOne({
+		where: { user_id: id, chat_id: chat_id },
+	});
+	if (!usersChat) {
+		throw new Error('User not found');
+	} else if (usersChat?.is_admin === false) {
+		throw new Error('User is not admin');
+	}
+	// console.log(chat_id, id);
+	// console.log('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$', user_ids);
+	await Promise.all(
+		user_ids.map(id => {
+			return UserChat.update(
+				{
+					is_admin: true,
+				},
+				{ where: { chat_id: chat.id, user_id: id } },
+			);
+		}),
+	);
+}
+
+module.exports = { createSingle, createGroup, find, edit, remove, editrole };

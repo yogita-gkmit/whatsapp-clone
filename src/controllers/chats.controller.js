@@ -4,6 +4,7 @@ const {
 	find,
 	edit,
 	remove,
+	editrole,
 } = require('../services/chats.service');
 
 async function createChat(req, res) {
@@ -73,4 +74,17 @@ async function deleteChat(req, res) {
 	}
 }
 
-module.exports = { createChat, getChat, editChat, deleteChat };
+async function editAdmin(req, res) {
+	try {
+		const { chat_id } = req.params;
+		const id = req.user.id;
+		const { user_ids } = req.body;
+		await editrole(chat_id, id, user_ids);
+		res.status(202).json({ message: 'successfully edited the group admin' });
+	} catch (error) {
+		console.log('Error editing the admin', error);
+		res.status(400).json({ message: error.message });
+	}
+}
+
+module.exports = { createChat, getChat, editChat, deleteChat, editAdmin };
