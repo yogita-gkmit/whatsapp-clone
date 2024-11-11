@@ -2,6 +2,7 @@ const {
 	createSingle,
 	createGroup,
 	find,
+	edit,
 } = require('../services/chats.service');
 
 async function createChat(req, res) {
@@ -45,4 +46,18 @@ async function getChat(req, res) {
 	}
 }
 
-module.exports = { createChat, getChat };
+async function editChat(req, res) {
+	try {
+		const { chat_id } = req.params;
+		const id = req.user.id;
+		const { name, description } = req.body;
+		const image = req.file?.path;
+		await edit(chat_id, id, name, description, image);
+		res.status(202).json({ message: 'successfully edited the group chat' });
+	} catch (error) {
+		console.log('Error getting the chat', error);
+		res.status(400).json({ message: error.message });
+	}
+}
+
+module.exports = { createChat, getChat, editChat };

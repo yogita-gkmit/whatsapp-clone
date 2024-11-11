@@ -56,18 +56,46 @@ async function find(chat_id, id) {
 		return chat;
 	} else {
 		const userIds = await UserChat.findAll({ chat_id: chat_id });
-		console.log(userIds);
+		// console.log(userIds);
 		let otherUser;
 		userIds.forEach(userId => {
 			if (userId.id !== id) {
 				otherUser = userId;
 			}
 		});
-		console.log(otherUser.id);
+		// console.log(
+		// 	'#############################################',
+		// 	otherUser.user_id,
+		// );
 
-		const user = await User.findByPk(otherUser.id);
+		const user = await User.findByPk(otherUser.user_id);
+		console.log(user);
 		return { user, chat };
 	}
 }
 
-module.exports = { createSingle, createGroup, find };
+async function edit(chat_id, id, name, description, image) {
+	const chat = await Chat.findByPk(chat_id);
+	if (chat.type === 'one-to-one') {
+		throw new Error('Only a group chat can be edited');
+	}
+	console.log(chat_id, id, name, description, image);
+	const usersChat = await UserChat.findOne({
+		where: { user_id: id, chat_id: chat_id },
+	});
+	if (!usersChat) {
+		throw new Error('User not found');
+	} else if (usersChat?.is_admin === false) {
+		throw new Error('User is not admin');
+	}
+
+	if (!chat) throw new Error('Chat does not exist');
+
+	chat.name = name || chat.name;
+	chat.description = description || chat.description;
+	chat.image = image || chat.image;
+
+	await chat.save();
+}
+
+module.exports = { createSingle, createGroup, find, edit };

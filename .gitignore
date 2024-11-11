@@ -3,3 +3,4 @@
 .env
 coverage
 package-lock.json
+/src/uploads
