@@ -1,7 +1,7 @@
 const User = require('../models').User;
 
 async function profile(id) {
-	const user = await User.findOne({ where: { id: id } });
+	const user = await User.findByPk(id);
 	if (!user) throw new Error('User Not Found');
 
 	return {
@@ -18,7 +18,7 @@ async function profile(id) {
 }
 
 async function editProfile(id, name, image, about, email) {
-	const user = await User.findOne({ where: { id: id } });
+	const user = await User.findByPk(id);
 
 	if (!user) throw new Error('user does not exist');
 
