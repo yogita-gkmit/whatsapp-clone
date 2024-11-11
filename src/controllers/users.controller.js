@@ -55,6 +55,7 @@ async function editSpecificProfile(req, res) {
 		console.log(id);
 		const image = req.file?.path;
 		const { name, email, about } = req.body;
+		console.log(name, email, about);
 		const response = await editProfile(id, name, image, about, email);
 		res.status(200).json({
 			success: true,

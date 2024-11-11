@@ -19,7 +19,8 @@ async function profile(id) {
 
 async function editProfile(id, name, image, about, email) {
 	const user = await User.findByPk(id);
-
+	console.log(user);
+	console.log(id, name, image, about, email);
 	if (!user) throw new Error('user does not exist');
 
 	user.name = name || user.name;
