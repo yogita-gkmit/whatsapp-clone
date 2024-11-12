@@ -87,8 +87,10 @@ async function edit(chat_id, id, name, description, image) {
 		where: { user_id: id, chat_id: chat_id },
 	});
 	if (!usersChat) {
-		throw new Error('User not found');
-	} else if (usersChat?.is_admin === false) {
+		const err = new Error('User not found');
+		err.statusCode = 404;
+		throw err;
+	} else if (!usersChat?.is_admin) {
 		throw new Error('User is not admin');
 	}
 
@@ -207,6 +209,28 @@ async function addUser(chat_id, id, token) {
 	});
 }
 
+async function removeUser(id, chat_id, user_id) {
+	const chat = await Chat.findByPk(chat_id);
+	if (!chat) throw new Error('Chat does not exist');
+
+	if (chat.type === 'one-to-one')
+		throw new Error('Not applicable for one to one conversation');
+	console.log(chat_id, id, user_id);
+	const usersChat = await UserChat.findOne({
+		where: { chat_id: chat_id, user_id: id },
+	});
+
+	if (!usersChat) {
+		throw new Error('User not found');
+	} else if (usersChat?.is_admin === false) {
+		throw new Error('User is not admin');
+	}
+
+	await UserChat.destroy({
+		where: { chat_id: chat_id, user_id: user_id },
+	});
+}
+
 module.exports = {
 	createSingle,
 	createGroup,
@@ -216,4 +240,5 @@ module.exports = {
 	editrole,
 	addUser,
 	invite,
+	removeUser,
 };

@@ -6,6 +6,7 @@ const {
 	remove,
 	editrole,
 	addUser: addUserToGroup,
+	removeUser: removeUserFromgroup,
 	invite,
 } = require('../services/chats.service');
 
@@ -116,6 +117,18 @@ async function emailInvite(req, res) {
 	}
 }
 
+async function removeUser(req, res) {
+	try {
+		const { chat_id, user_id } = req.params;
+		const id = req.user.id;
+		await removeUserFromgroup(id, chat_id, user_id);
+		res.status(202).json({ message: 'successfully removed the user' });
+	} catch (error) {
+		console.log('Error sending the email invite');
+		res.status(400).json({ message: error.message });
+	}
+}
+
 module.exports = {
 	createChat,
 	getChat,
@@ -124,4 +137,5 @@ module.exports = {
 	editAdmin,
 	addUser,
 	emailInvite,
+	removeUser,
 };
