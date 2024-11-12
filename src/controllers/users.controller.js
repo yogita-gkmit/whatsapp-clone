@@ -1,9 +1,9 @@
-const { profile, editProfile } = require('../services/users.service');
+const usersService = require('../services/users.service');
 
 async function myProfile(req, res) {
 	try {
 		const id = req.user.id;
-		const response = await profile(id);
+		const response = await usersService.profile(id);
 
 		res.status(200).json({
 			success: true,
@@ -18,7 +18,7 @@ async function myProfile(req, res) {
 async function specificProfile(req, res) {
 	try {
 		const { id } = req.params;
-		const response = await profile(id);
+		const response = await usersService.profile(id);
 
 		res.status(200).json({
 			success: true,
@@ -35,8 +35,8 @@ async function editMyProfile(req, res) {
 		const id = req.user.id;
 
 		const image = req.file?.path;
-		const { name, email, about } = req.body;
-		const response = await editProfile(id, name, image, about, email);
+		const payload = req.body;
+		const response = await usersService.editProfile(id, image, payload);
 		res.status(200).json({
 			success: true,
 			message: response,
@@ -52,9 +52,9 @@ async function editSpecificProfile(req, res) {
 		const { id } = req.params;
 
 		const image = req.file?.path;
-		const { name, email, about } = req.body;
+		const payload = req.body;
 
-		const response = await editProfile(id, name, image, about, email);
+		const response = await usersService.editProfile(id, image, payload);
 		res.status(200).json({
 			success: true,
 			message: response,

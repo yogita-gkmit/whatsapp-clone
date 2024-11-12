@@ -17,10 +17,10 @@ async function profile(id) {
 	};
 }
 
-async function editProfile(id, name, image, about, email) {
+async function editProfile(id, image, payload) {
+	const { name, email, about } = payload;
 	const user = await User.findByPk(id);
 
-	console.log(id, name, image, about, email);
 	if (!user) commonHelpers.customError('user does not exist', 404);
 
 	user.name = name || user.name;
