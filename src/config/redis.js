@@ -3,8 +3,6 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const reddis = new Redis({
-  // host: 'localhost',
-  // port: 6379,
   url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
 });
 
@@ -16,20 +14,5 @@ async function connectToRedis() {
     console.error('Redis connection error:', err);
   });
 }
-
-// const testRedisConnection = async () => {
-//   try {
-//     // Set a value in Redis
-//     await reddis.set('myKey', 'Hello, Redis!');
-//     // Get the value from Redis
-//     const value = await reddis.get('myKey');
-//     console.log('Retrieved from Redis:', value); // Should output: Hello, Redis!
-//   } catch (err) {
-//     console.error('Error interacting with Redis:', err);
-//   } finally {
-//     // Always close the connection when you're done
-//     reddis.quit();
-//   }
-// };
 
 module.exports = { connectToRedis, reddis };

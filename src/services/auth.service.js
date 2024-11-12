@@ -38,6 +38,7 @@ async function sendOtp(email) {
 	await transporter.sendMail(mailOptions, (error, info) => {
 		if (error) {
 			console.error(error);
+			throw new Error('Error sending mail');
 		} else {
 			console.log('Email sent: ' + info.response);
 		}
@@ -87,7 +88,7 @@ async function remove(token) {
 		}
 		const expiresIn = 3600;
 		await addTokenToBlacklist(token, expiresIn);
-		console.log('Token added to blacklist');
+
 		return { message: 'Logged out successfully' };
 	} catch (error) {
 		console.log(error);

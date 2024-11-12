@@ -12,7 +12,6 @@ async function register(req, res) {
 	try {
 		const { name, about, email } = req.body;
 		const image = req.file?.path;
-		console.log(image, email, about, name);
 		await create(name, image, about, email);
 		res.status(200).json({ message: `User has been successfully created` });
 	} catch (error) {
