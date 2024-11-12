@@ -3,7 +3,8 @@ const { transporter, mailOptions } = require('../utils/email.util');
 const jwt = require('jsonwebtoken');
 const commonHelpers = require('../helpers/common.helper');
 
-async function createSingle(type, user_ids, loggedInId) {
+async function createSingle(payload, loggedInId) {
+	const { type, user_ids } = payload;
 	const userDetails = await User.findByPk(user_ids[0]);
 
 	const name = userDetails.name;
@@ -20,14 +21,9 @@ async function createSingle(type, user_ids, loggedInId) {
 	return chat;
 }
 
-async function createGroup(
-	name,
-	description,
-	type,
-	image,
-	user_ids,
-	loggedInId,
-) {
+async function createGroup(payload, image, loggedInId) {
+	const { name, description, type } = payload;
+	let { user_ids } = payload;
 	user_ids = JSON.parse(user_ids);
 	const chat = await Chat.create({ name, description, type, image });
 	await UserChat.create({
@@ -68,7 +64,8 @@ async function find(chat_id, id) {
 	}
 }
 
-async function edit(chat_id, id, name, description, image) {
+async function edit(chat_id, id, payload, image) {
+	const { name, description } = payload;
 	const chat = await Chat.findByPk(chat_id);
 	if (!chat) {
 		commonHelpers.customError('Chat does not exist', 404);
@@ -111,7 +108,8 @@ async function remove(chat_id, id) {
 	await chat.destroy();
 }
 
-async function editrole(chat_id, id, user_ids) {
+async function editrole(chat_id, id, payload) {
+	const { user_ids } = payload;
 	const chat = await Chat.findByPk(chat_id);
 	if (!chat) commonHelpers.customError('Chat does not exist', 404);
 	if (chat.type === 'one-to-one')
@@ -125,7 +123,7 @@ async function editrole(chat_id, id, user_ids) {
 	});
 	if (!usersChat) {
 		commonHelpers.customError('User not found', 404);
-	} else if (usersChat?.is_admin === false) {
+	} else if (!usersChat?.is_admin) {
 		commonHelpers.customError('User is not admin', 403);
 	}
 
@@ -141,7 +139,8 @@ async function editrole(chat_id, id, user_ids) {
 	);
 }
 
-async function invite(chat_id, id, user_id) {
+async function invite(chat_id, id, payload) {
+	const { user_id } = payload;
 	const chat = Chat.findByPk(chat_id);
 	if (!chat) commonHelpers.customError('Chat does not exist', 404);
 	if (chat.type === 'one-to-one')
@@ -183,7 +182,8 @@ async function invite(chat_id, id, user_id) {
 	});
 }
 
-async function addUser(chat_id, id, token) {
+async function addUser(chat_id, id, payload) {
+	const { token } = payload;
 	const decoded = jwt.verify(token, process.env.JWT_SECRET);
 	if (!decoded) {
 		commonHelpers.customError('Invalid invite token', 400);
