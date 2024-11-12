@@ -14,15 +14,15 @@ const {
 } = require('../controllers/chats.controller');
 
 router.post('/', authMiddleware, upload.single('image'), createChat);
-router.get('/:chat_id', authMiddleware, getChat);
-router.put('/:chat_id', authMiddleware, upload.single('image'), editChat);
-router.delete('/:chat_id', authMiddleware, deleteChat);
-router.put('/:chat_id/users', authMiddleware, editAdmin);
+router.get('/:chatId', authMiddleware, getChat);
+router.put('/:chatId', authMiddleware, upload.single('image'), editChat);
+router.delete('/:chatId', authMiddleware, deleteChat);
+router.put('/:chatId/users', authMiddleware, editAdmin);
 
-router.post('/:chat_id/email-invite', authMiddleware, emailInvite);
+router.post('/:chatId/emailInvite', authMiddleware, emailInvite);
 
-router.post('/:chat_id/users_chats', authMiddleware, addUser);
+router.post('/:chatId/usersChats', authMiddleware, addUser);
 
-router.delete('/:chat_id/users/:user_id', authMiddleware, removeUser);
+router.delete('/:chatId/users/:userId', authMiddleware, removeUser);
 
 module.exports = router;

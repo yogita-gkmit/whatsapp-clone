@@ -16,8 +16,8 @@ const {
 	logout,
 } = require('../controllers/auth.controller');
 
-router.post('/send-otp', validate(sendOTPSchema), sendOTP);
-router.post('/verify-otp', validate(verifyOTPSchema), verifyOTP);
+router.post('/sendOtp', validate(sendOTPSchema), sendOTP);
+router.post('/verifyOtp', validate(verifyOTPSchema), verifyOTP);
 router.post(
 	'/register',
 	upload.single('image'),

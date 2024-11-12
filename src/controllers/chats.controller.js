@@ -25,8 +25,8 @@ async function createChat(req, res) {
 async function getChat(req, res) {
 	try {
 		const id = req.user.id;
-		const { chat_id } = req.params;
-		const response = await chatsService.find(chat_id, id);
+		const { chatId } = req.params;
+		const response = await chatsService.find(chatId, id);
 		res
 			.status(200)
 			.json({ message: 'successfully getting the chat', response });
@@ -38,11 +38,11 @@ async function getChat(req, res) {
 
 async function editChat(req, res) {
 	try {
-		const { chat_id } = req.params;
+		const { chatId } = req.params;
 		const id = req.user.id;
 		const payload = req.body;
 		const image = req.file?.path;
-		await chatsService.edit(chat_id, id, payload, image);
+		await chatsService.edit(chatId, id, payload, image);
 		res.status(202).json({ message: 'successfully edited the group chat' });
 	} catch (error) {
 		const statusCode = error.statusCode || 400;
@@ -52,9 +52,9 @@ async function editChat(req, res) {
 
 async function deleteChat(req, res) {
 	try {
-		const { chat_id } = req.params;
+		const { chatId } = req.params;
 		const id = req.user.id;
-		await chatsService.remove(chat_id, id);
+		await chatsService.remove(chatId, id);
 		res.status(202).json({ message: 'successfully deleted the group chat' });
 	} catch (error) {
 		const statusCode = error.statusCode || 400;
@@ -64,10 +64,10 @@ async function deleteChat(req, res) {
 
 async function editAdmin(req, res) {
 	try {
-		const { chat_id } = req.params;
+		const { chatId } = req.params;
 		const id = req.user.id;
 		const payload = req.body;
-		await chatsService.editrole(chat_id, id, payload);
+		await chatsService.editrole(chatId, id, payload);
 		res.status(202).json({ message: 'successfully edited the group admin' });
 	} catch (error) {
 		const statusCode = error.statusCode || 400;
@@ -78,10 +78,10 @@ async function editAdmin(req, res) {
 // here token is what generated in email invite and i have to login as the user im adding to hit the api
 async function addUser(req, res) {
 	try {
-		const { chat_id } = req.params;
+		const { chatId } = req.params;
 		const id = req.user.id;
 		const payload = req.body;
-		await chatsService.addUserToGroup(chat_id, id, payload);
+		await chatsService.addUser(chatId, id, payload);
 		res.status(201).json({ message: 'successfully added user in chat' });
 	} catch (error) {
 		const statusCode = error.statusCode || 400;
@@ -91,10 +91,10 @@ async function addUser(req, res) {
 
 async function emailInvite(req, res) {
 	try {
-		const { chat_id } = req.params;
+		const { chatId } = req.params;
 		const id = req.user.id;
 		const payload = req.body;
-		await chatsService.invite(chat_id, id, payload);
+		await chatsService.invite(chatId, id, payload);
 		res.status(200).json({ message: 'successfully sent invite to the email' });
 	} catch (error) {
 		const statusCode = error.statusCode || 400;
@@ -104,9 +104,9 @@ async function emailInvite(req, res) {
 
 async function removeUser(req, res) {
 	try {
-		const { chat_id, user_id } = req.params;
+		const { chatId, userId } = req.params;
 		const id = req.user.id;
-		await chatsService.removeUserFromgroup(id, chat_id, user_id);
+		await chatsService.removeUser(id, chatId, userId);
 		res.status(202).json({ message: 'successfully removed the user' });
 	} catch (error) {
 		const statusCode = error.statusCode || 400;
