@@ -15,8 +15,8 @@ async function register(req, res) {
 		await create(name, image, about, email);
 		res.status(200).json({ message: `User has been successfully created` });
 	} catch (error) {
-		console.log('Error registering the user', error);
-		res.status(400).json({ message: error.message });
+		const statusCode = error.statusCode || 400;
+		res.status(statusCode).json({ message: error.message });
 	}
 }
 
@@ -30,8 +30,8 @@ async function sendOTP(req, res) {
 			message: response,
 		});
 	} catch (error) {
-		console.log(error);
-		res.status(400).json({ message: error.message });
+		const statusCode = error.statusCode || 400;
+		res.status(statusCode).json({ message: error.message });
 	}
 }
 
@@ -42,8 +42,8 @@ async function verifyOTP(req, res) {
 
 		res.status(200).json({ message: 'User verified successfully', token });
 	} catch (error) {
-		console.log(error);
-		res.status(400).json({ message: error.message });
+		const statusCode = error.statusCode || 400;
+		res.status(statusCode).json({ message: error.message });
 	}
 }
 
@@ -55,8 +55,8 @@ async function logout(req, res) {
 			message: result.message || 'Successfully logged out',
 		});
 	} catch (error) {
-		console.log(error);
-		res.status(400).json({ message: error.message });
+		const statusCode = error.statusCode || 400;
+		res.status(statusCode).json({ message: error.message });
 	}
 }
 

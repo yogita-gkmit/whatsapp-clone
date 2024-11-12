@@ -1,8 +1,8 @@
 const User = require('../models').User;
-
+const commonHelpers = require('../helpers/common.helper');
 async function profile(id) {
 	const user = await User.findByPk(id);
-	if (!user) throw new Error('User Not Found');
+	if (!user) commonHelpers.customError('User Not Found', 404);
 
 	return {
 		user: {
@@ -21,7 +21,7 @@ async function editProfile(id, name, image, about, email) {
 	const user = await User.findByPk(id);
 
 	console.log(id, name, image, about, email);
-	if (!user) throw new Error('user does not exist');
+	if (!user) commonHelpers.customError('user does not exist', 404);
 
 	user.name = name || user.name;
 	user.image = image || user.image;

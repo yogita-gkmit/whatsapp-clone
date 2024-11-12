@@ -33,7 +33,8 @@ async function createChat(req, res) {
 			.json({ message: 'User has been successfully created', response });
 	} catch (error) {
 		console.log('Error creating the chat', error);
-		res.status(400).json({ message: error.message });
+		const statusCode = error.statusCode || 400;
+		res.status(statusCode).json({ message: error.message });
 	}
 }
 
@@ -46,8 +47,8 @@ async function getChat(req, res) {
 			.status(200)
 			.json({ message: 'successfully getting the chat', response });
 	} catch (error) {
-		console.log('Error getting the chat', error);
-		res.status(400).json({ message: error.message });
+		const statusCode = error.statusCode || 400;
+		res.status(statusCode).json({ message: error.message });
 	}
 }
 
@@ -60,8 +61,8 @@ async function editChat(req, res) {
 		await edit(chat_id, id, name, description, image);
 		res.status(202).json({ message: 'successfully edited the group chat' });
 	} catch (error) {
-		console.log('Error getting the chat', error);
-		res.status(400).json({ message: error.message });
+		const statusCode = error.statusCode || 400;
+		res.status(statusCode).json({ message: error.message });
 	}
 }
 
@@ -72,8 +73,8 @@ async function deleteChat(req, res) {
 		await remove(chat_id, id);
 		res.status(202).json({ message: 'successfully deleted the group chat' });
 	} catch (error) {
-		console.log('Error deleting the chat', error);
-		res.status(400).json({ message: error.message });
+		const statusCode = error.statusCode || 400;
+		res.status(statusCode).json({ message: error.message });
 	}
 }
 
@@ -85,8 +86,8 @@ async function editAdmin(req, res) {
 		await editrole(chat_id, id, user_ids);
 		res.status(202).json({ message: 'successfully edited the group admin' });
 	} catch (error) {
-		console.log('Error editing the admin', error);
-		res.status(400).json({ message: error.message });
+		const statusCode = error.statusCode || 400;
+		res.status(statusCode).json({ message: error.message });
 	}
 }
 
@@ -99,8 +100,8 @@ async function addUser(req, res) {
 		await addUserToGroup(chat_id, id, token);
 		res.status(201).json({ message: 'successfully added user in chat' });
 	} catch (error) {
-		console.log('Error adding the user in chat', error);
-		res.status(400).json({ message: error.message });
+		const statusCode = error.statusCode || 400;
+		res.status(statusCode).json({ message: error.message });
 	}
 }
 
@@ -112,8 +113,8 @@ async function emailInvite(req, res) {
 		await invite(chat_id, id, user_id);
 		res.status(200).json({ message: 'successfully sent invite to the email' });
 	} catch (error) {
-		console.log('Error sending the email invite');
-		res.status(400).json({ message: error.message });
+		const statusCode = error.statusCode || 400;
+		res.status(statusCode).json({ message: error.message });
 	}
 }
 
@@ -124,8 +125,8 @@ async function removeUser(req, res) {
 		await removeUserFromgroup(id, chat_id, user_id);
 		res.status(202).json({ message: 'successfully removed the user' });
 	} catch (error) {
-		console.log('Error sending the email invite');
-		res.status(400).json({ message: error.message });
+		const statusCode = error.statusCode || 400;
+		res.status(statusCode).json({ message: error.message });
 	}
 }
 

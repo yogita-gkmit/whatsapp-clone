@@ -10,8 +10,8 @@ async function myProfile(req, res) {
 			message: response,
 		});
 	} catch (error) {
-		console.log('Error showing logged in user', error);
-		res.status(400).json({ message: error.message });
+		const statusCode = error.statusCode || 400;
+		res.status(statusCode).json({ message: error.message });
 	}
 }
 
@@ -25,8 +25,8 @@ async function specificProfile(req, res) {
 			message: response,
 		});
 	} catch (error) {
-		console.log('Error showing specific user', error);
-		res.status(400).json({ message: error.message });
+		const statusCode = error.statusCode || 400;
+		res.status(statusCode).json({ message: error.message });
 	}
 }
 
@@ -42,8 +42,8 @@ async function editMyProfile(req, res) {
 			message: response,
 		});
 	} catch (error) {
-		console.log('Error editing logged in user', error);
-		res.status(400).json({ message: error.message });
+		const statusCode = error.statusCode || 400;
+		res.status(statusCode).json({ message: error.message });
 	}
 }
 
@@ -60,8 +60,8 @@ async function editSpecificProfile(req, res) {
 			message: response,
 		});
 	} catch (error) {
-		console.log('Error editing specific user', error);
-		res.status(400).json({ message: error.message });
+		const statusCode = error.statusCode || 400;
+		res.status(statusCode).json({ message: error.message });
 	}
 }
 module.exports = {
