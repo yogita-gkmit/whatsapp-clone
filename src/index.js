@@ -1,14 +1,17 @@
 const express = require('express');
 const dotenv = require('dotenv');
+const { registerRoutes } = require('./routes/index.js');
 dotenv.config();
 const app = express();
+
 const { sequelize } = require('./models/');
 const PORT = process.env.PORT || 3000;
 
-const { connectToRedis, testRedisConnection } = require('./config/redis');
+const { connectToRedis } = require('./config/redis');
 
 app.use(express.json());
-
+app.use(express.urlencoded({ extended: true }));
+registerRoutes(app);
 const startServer = async function () {
 	try {
 		await sequelize.authenticate();
@@ -20,7 +23,7 @@ const startServer = async function () {
 };
 startServer();
 connectToRedis();
-testRedisConnection();
+
 app.get('/health-check', (req, res) => {
 	try {
 		console.log('working fine');
