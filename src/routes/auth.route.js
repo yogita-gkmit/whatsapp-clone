@@ -2,6 +2,12 @@ const express = require('express');
 const router = express.Router();
 const { upload } = require('../middlewares/multer.middleware');
 const { authMiddleware } = require('../middlewares/auth.middleware');
+const { validate } = require('../middlewares/validators.middleware');
+const {
+	registerSchema,
+	sendOTPSchema,
+	verifyOTPSchema,
+} = require('../validators/auth.validator');
 
 const {
 	register,
@@ -10,8 +16,13 @@ const {
 	logout,
 } = require('../controllers/auth.controller');
 
-router.post('/send-otp', sendOTP);
-router.post('/verify-otp', verifyOTP);
-router.post('/register', upload.single('image'), register);
+router.post('/send-otp', validate(sendOTPSchema), sendOTP);
+router.post('/verify-otp', validate(verifyOTPSchema), verifyOTP);
+router.post(
+	'/register',
+	upload.single('image'),
+	validate(registerSchema),
+	register,
+);
 router.post('/logout', authMiddleware, logout);
 module.exports = router;
