@@ -23,7 +23,8 @@ async function generateOtp() {
 
 	return otp;
 }
-async function sendOtp(email) {
+async function sendOtp(payload) {
+	const { email } = payload;
 	if (!(await validUser(email))) {
 		commonHelpers.customError('User is not registered', 404);
 	}
@@ -48,7 +49,8 @@ async function sendOtp(email) {
 	return { message: 'otp sent successfully', otp };
 }
 
-async function verifyOtp(email, otp) {
+async function verifyOtp(payload) {
+	const { email, otp } = payload;
 	if (!(await validUser(email))) {
 		return { message: 'User is not registered' };
 	}
@@ -66,7 +68,8 @@ async function verifyOtp(email, otp) {
 	return token;
 }
 
-async function create(name, image, about, email) {
+async function create(payload, image) {
+	const { name, about, email } = payload;
 	if (await validUser(email)) {
 		commonHelpers.customError('User already registered', 400);
 	}
