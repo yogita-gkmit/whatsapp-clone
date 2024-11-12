@@ -5,6 +5,8 @@ const {
 	edit,
 	remove,
 	editrole,
+	addUser: addUserToGroup,
+	invite,
 } = require('../services/chats.service');
 
 async function createChat(req, res) {
@@ -87,4 +89,39 @@ async function editAdmin(req, res) {
 	}
 }
 
-module.exports = { createChat, getChat, editChat, deleteChat, editAdmin };
+// here token is what generated in email invite and i have to login as the user im adding to hit the api
+async function addUser(req, res) {
+	try {
+		const { chat_id } = req.params;
+		const id = req.user.id;
+		const { token } = req.body;
+		await addUserToGroup(chat_id, id, token);
+		res.status(201).json({ message: 'successfully added user in chat' });
+	} catch (error) {
+		console.log('Error adding the user in chat', error);
+		res.status(400).json({ message: error.message });
+	}
+}
+
+async function emailInvite(req, res) {
+	try {
+		const { chat_id } = req.params;
+		const id = req.user.id;
+		const { user_id } = req.body;
+		await invite(chat_id, id, user_id);
+		res.status(200).json({ message: 'successfully sent invite to the email' });
+	} catch (error) {
+		console.log('Error sending the email invite');
+		res.status(400).json({ message: error.message });
+	}
+}
+
+module.exports = {
+	createChat,
+	getChat,
+	editChat,
+	deleteChat,
+	editAdmin,
+	addUser,
+	emailInvite,
+};

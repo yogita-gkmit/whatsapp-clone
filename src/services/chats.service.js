@@ -1,4 +1,6 @@
 const { Chat, User, UserChat } = require('../models');
+const { transporter, mailOptions } = require('../utils/email.util');
+const jwt = require('jsonwebtoken');
 
 async function createSingle(type, user_ids, loggedInId) {
 	const userDetails = await User.findByPk(user_ids[0]);
@@ -144,4 +146,74 @@ async function editrole(chat_id, id, user_ids) {
 	);
 }
 
-module.exports = { createSingle, createGroup, find, edit, remove, editrole };
+async function invite(chat_id, id, user_id) {
+	const chat = Chat.findByPk(chat_id);
+	if (!chat) throw new Error('Chat does not exist');
+	if (chat.type === 'one-to-one')
+		throw new Error('Not applicable for one to one conversation');
+	console.log(chat_id, id, user_id);
+	const usersChat = await UserChat.findOne({
+		where: { chat_id: chat_id, user_id: id },
+	});
+
+	if (!usersChat) {
+		throw new Error('User not found');
+	} else if (usersChat?.is_admin === false) {
+		throw new Error('User is not admin');
+	}
+	const user = await User.findByPk(user_id);
+	console.log(user);
+	console.log(user.email);
+	if (!user) throw new Error('User does not exist');
+	const token = jwt.sign({ user_id: user_id }, process.env.JWT_SECRET, {
+		expiresIn: '1h',
+	});
+	console.log(token);
+	const mailOptions = {
+		from: process.env.MAIL_USER,
+		to: user.email,
+		subject: `Email invite to be in ${chat.name} group`,
+		text: `Join ${chat.name} by accepting the url below.
+		http://localhost:5000/joingroup/:${chat_id}?${token}`,
+	};
+	await transporter.sendMail(mailOptions, (error, info) => {
+		if (error) {
+			console.error(error);
+		} else {
+			console.log('Email sent: ' + info.response);
+		}
+	});
+}
+
+async function addUser(chat_id, id, token) {
+	const decoded = jwt.verify(token, process.env.JWT_SECRET);
+	if (!decoded) {
+		throw new Error('Invalid invite token');
+	}
+
+	if (id !== decoded.user_id) {
+		throw new Error('Invalid invite');
+	}
+
+	const chat = await Chat.findByPk(chat_id);
+	if (!chat) throw new Error('Chat does not exist');
+	if (chat.type === 'one-to-one')
+		throw new Error('Not applicable for one to one conversation');
+
+	await UserChat.create({
+		chat_id: chat_id,
+		user_id: decoded.user_id,
+		is_admin: false,
+	});
+}
+
+module.exports = {
+	createSingle,
+	createGroup,
+	find,
+	edit,
+	remove,
+	editrole,
+	addUser,
+	invite,
+};
