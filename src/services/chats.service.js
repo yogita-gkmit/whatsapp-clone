@@ -1,7 +1,15 @@
 const { Chat, User, UserChat } = require('../models');
 const { transporter, mailOptions } = require('../utils/email.util');
-const jwt = require('jsonwebtoken');
+
 const commonHelpers = require('../helpers/common.helper');
+const { reddis } = require('../config/redis');
+
+const Cryptr = require('cryptr');
+const cryptr = new Cryptr('myTotallySecretKey', {
+	encoding: 'base64',
+	pbkdf2Iterations: 10000,
+	saltLength: 10,
+});
 
 async function createSingle(payload, loggedInId) {
 	const { type, user_ids: userIds } = payload;
@@ -59,7 +67,6 @@ async function find(chatId, id) {
 		});
 
 		const user = await User.findByPk(otherUser.user_id);
-		// console.log(user);
 
 		return { user, chat };
 	}
@@ -84,9 +91,9 @@ async function edit(chatId, id, payload, image) {
 		commonHelpers.customError('User is not admin', 403);
 	}
 
-	chat.name = name || chat.name;
-	chat.description = description || chat.description;
-	chat.image = image || chat.image;
+	chat.name = name;
+	chat.description = description;
+	chat.image = image;
 
 	await chat.save();
 }
@@ -162,9 +169,9 @@ async function invite(chatId, id, payload) {
 	const user = await User.findByPk(userId);
 
 	if (!user) commonHelpers.customError('User does not exist', 404);
-	const token = jwt.sign({ user_id: userId }, process.env.JWT_SECRET, {
-		expiresIn: '1h',
-	});
+	const token = cryptr.encrypt(userId);
+	await reddis.set(userId, token, 'ex', 60 * 60 * 24);
+
 	console.log(token);
 	const mailOptions = {
 		from: process.env.MAIL_USER,
@@ -185,12 +192,18 @@ async function invite(chatId, id, payload) {
 
 async function addUser(chatId, id, payload) {
 	const { token } = payload;
-	const decoded = jwt.verify(token, process.env.JWT_SECRET);
-	if (!decoded) {
-		commonHelpers.customError('Invalid invite token', 400);
+	const decoded = cryptr.decrypt(token);
+	const inviteToken = await reddis.get(id);
+
+	if (!inviteToken) {
+		commonHelpers.customError('Token expired or invalid', 400);
+	}
+	const inviteDecoded = await cryptr.decrypt(inviteToken);
+	if (decoded !== inviteDecoded) {
+		commonHelpers.customError('Invalid token', 403);
 	}
 
-	if (id !== decoded.user_id) {
+	if (id !== decoded) {
 		commonHelpers.customError('Invalid invite', 400);
 	}
 
@@ -204,7 +217,7 @@ async function addUser(chatId, id, payload) {
 
 	await UserChat.create({
 		chat_id: chatId,
-		user_id: decoded.user_id,
+		user_id: decoded,
 		is_admin: false,
 	});
 }

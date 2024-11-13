@@ -31,6 +31,7 @@ async function getChat(req, res) {
 			.status(200)
 			.json({ message: 'successfully getting the chat', response });
 	} catch (error) {
+		console.log(error);
 		const statusCode = error.statusCode || 400;
 		res.status(statusCode).json({ message: error.message });
 	}
@@ -45,6 +46,7 @@ async function editChat(req, res) {
 		await chatsService.edit(chatId, id, payload, image);
 		res.status(202).json({ message: 'successfully edited the group chat' });
 	} catch (error) {
+		console.log(error);
 		const statusCode = error.statusCode || 400;
 		res.status(statusCode).json({ message: error.message });
 	}
@@ -57,6 +59,7 @@ async function deleteChat(req, res) {
 		await chatsService.remove(chatId, id);
 		res.status(202).json({ message: 'successfully deleted the group chat' });
 	} catch (error) {
+		console.log(error);
 		const statusCode = error.statusCode || 400;
 		res.status(statusCode).json({ message: error.message });
 	}
@@ -70,6 +73,7 @@ async function editAdmin(req, res) {
 		await chatsService.editrole(chatId, id, payload);
 		res.status(202).json({ message: 'successfully edited the group admin' });
 	} catch (error) {
+		console.log(error);
 		const statusCode = error.statusCode || 400;
 		res.status(statusCode).json({ message: error.message });
 	}
@@ -82,8 +86,10 @@ async function addUser(req, res) {
 		const id = req.user.id;
 		const payload = req.body;
 		await chatsService.addUser(chatId, id, payload);
+		console.log(chatId, id, payload);
 		res.status(201).json({ message: 'successfully added user in chat' });
 	} catch (error) {
+		console.log(error);
 		const statusCode = error.statusCode || 400;
 		res.status(statusCode).json({ message: error.message });
 	}
@@ -97,6 +103,7 @@ async function emailInvite(req, res) {
 		await chatsService.invite(chatId, id, payload);
 		res.status(200).json({ message: 'successfully sent invite to the email' });
 	} catch (error) {
+		console.log(error);
 		const statusCode = error.statusCode || 400;
 		res.status(statusCode).json({ message: error.message });
 	}
@@ -109,6 +116,7 @@ async function removeUser(req, res) {
 		await chatsService.removeUser(id, chatId, userId);
 		res.status(202).json({ message: 'successfully removed the user' });
 	} catch (error) {
+		console.log(error);
 		const statusCode = error.statusCode || 400;
 		res.status(statusCode).json({ message: error.message });
 	}

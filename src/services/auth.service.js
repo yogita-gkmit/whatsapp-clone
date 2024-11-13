@@ -11,9 +11,6 @@ const commonHelpers = require('../helpers/common.helper');
 const dotenv = require('dotenv');
 dotenv.config();
 
-const redis = require('redis');
-const client = redis.createClient();
-
 async function generateOtp() {
 	let otp = otpGenerator.generate(6, {
 		upperCaseAlphabets: false,
@@ -29,7 +26,7 @@ async function sendOtp(payload) {
 		commonHelpers.customError('User is not registered', 404);
 	}
 	const otp = await generateOtp();
-	await reddis.set(email, otp);
+	await reddis.set(email, otp, 'ex', 500);
 
 	const mailOptions = {
 		from: process.env.MAIL_USER,
