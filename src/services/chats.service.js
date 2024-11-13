@@ -13,9 +13,7 @@ const cryptr = new Cryptr('myTotallySecretKey', {
 
 async function createSingle(payload, loggedInId) {
 	const { type, user_ids: userIds } = payload;
-	if (!chat) {
-		throw commonHelpers.customError('Chat does not exist', 404);
-	}
+
 	const userDetails = await User.findByPk(userIds[0]);
 
 	const name = userDetails.name;
@@ -35,7 +33,7 @@ async function createSingle(payload, loggedInId) {
 async function createGroup(payload, image, loggedInId) {
 	const { name, description, type } = payload;
 	let { user_ids: userIds } = payload;
-	userIds = JSON.parse(userIds);
+	// userIds = JSON.parse(userIds);
 	const chat = await Chat.create({ name, description, type, image });
 	if (!chat) {
 		throw commonHelpers.customError('Chat does not exist', 404);
@@ -99,12 +97,13 @@ async function edit(chatId, id, payload, image) {
 	} else if (!usersChat?.is_admin) {
 		throw commonHelpers.customError('User is not admin', 403);
 	}
-
-	chat.name = name;
-	chat.description = description;
-	chat.image = image;
-
-	await chat.save();
+	await Chat.update(
+		{ name: name, image: image, description: description },
+		{
+			where: { id: chatId },
+			returning: true,
+		},
+	);
 }
 
 async function remove(chatId, id) {
