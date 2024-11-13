@@ -324,6 +324,24 @@ async function editMessage(chatId, messageId, id, payload, media) {
 	return udpatedMessage;
 }
 
+async function deleteMessage(chatId, messageId, id, payload, media) {
+	const lastMessage = await Message.findAll({
+		where: { chat_id: chatId, user_id: id },
+		limit: 1,
+		order: [['created_at', 'DESC']],
+		plain: true,
+	});
+	if (lastMessage.id !== messageId) {
+		throw commonHelpers.customError('user can not delete this message', 403);
+	}
+
+	await Message.destroy({
+		where: { id: messageId, user_id: id, chat_id: chatId },
+	});
+
+	return 'message deleted successfully';
+}
+
 module.exports = {
 	createSingle,
 	createGroup,
@@ -336,4 +354,5 @@ module.exports = {
 	removeUser,
 	createMessage,
 	editMessage,
+	deleteMessage,
 };

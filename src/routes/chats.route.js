@@ -49,4 +49,11 @@ router.put(
 	chatsController.editMessage,
 );
 
+router.delete(
+	'/:chatId/messages/:messageId',
+	authMiddleware,
+	upload.single('media'),
+	chatsController.deleteMessage,
+);
+
 module.exports = router;

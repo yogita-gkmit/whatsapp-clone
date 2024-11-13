@@ -158,6 +158,19 @@ async function editMessage(req, res) {
 	}
 }
 
+async function deleteMessage(req, res) {
+	try {
+		const { chatId, messageId } = req.params;
+		const id = req.user.id;
+		const response = await chatsService.deleteMessage(chatId, messageId, id);
+		res.status(200).json({ message: response });
+	} catch (error) {
+		console.log(error);
+		const statusCode = error.statusCode || 400;
+		res.status(statusCode).json({ message: error.message });
+	}
+}
+
 module.exports = {
 	createChat,
 	getChat,
@@ -169,4 +182,5 @@ module.exports = {
 	removeUser,
 	createMessage,
 	editMessage,
+	deleteMessage,
 };
