@@ -10,6 +10,7 @@ async function myProfile(req, res) {
 			message: response,
 		});
 	} catch (error) {
+		console.log(error);
 		const statusCode = error.statusCode || 400;
 		res.status(statusCode).json({ message: error.message });
 	}
@@ -25,6 +26,7 @@ async function specificProfile(req, res) {
 			message: response,
 		});
 	} catch (error) {
+		console.log(error);
 		const statusCode = error.statusCode || 400;
 		res.status(statusCode).json({ message: error.message });
 	}
@@ -42,6 +44,7 @@ async function editMyProfile(req, res) {
 			message: response,
 		});
 	} catch (error) {
+		console.log(error);
 		const statusCode = error.statusCode || 400;
 		res.status(statusCode).json({ message: error.message });
 	}
@@ -60,6 +63,7 @@ async function editSpecificProfile(req, res) {
 			message: response,
 		});
 	} catch (error) {
+		console.log(error);
 		const statusCode = error.statusCode || 400;
 		res.status(statusCode).json({ message: error.message });
 	}

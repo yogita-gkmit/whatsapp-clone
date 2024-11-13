@@ -11,6 +11,7 @@ async function register(req, res) {
 		await authServices.create(payload, image);
 		res.status(200).json({ message: `User has been successfully created` });
 	} catch (error) {
+		console.log(error);
 		const statusCode = error.statusCode || 400;
 		res.status(statusCode).json({ message: error.message });
 	}
@@ -26,6 +27,7 @@ async function sendOTP(req, res) {
 			message: response,
 		});
 	} catch (error) {
+		console.log(error);
 		const statusCode = error.statusCode || 400;
 		res.status(statusCode).json({ message: error.message });
 	}
@@ -38,6 +40,7 @@ async function verifyOTP(req, res) {
 
 		res.status(200).json({ message: 'User verified successfully', token });
 	} catch (error) {
+		console.log(error);
 		const statusCode = error.statusCode || 400;
 		res.status(statusCode).json({ message: error.message });
 	}
@@ -51,6 +54,7 @@ async function logout(req, res) {
 			message: result.message || 'Successfully logged out',
 		});
 	} catch (error) {
+		console.log(error);
 		const statusCode = error.statusCode || 400;
 		res.status(statusCode).json({ message: error.message });
 	}
