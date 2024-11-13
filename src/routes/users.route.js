@@ -5,28 +5,25 @@ const { upload } = require('../middlewares/multer.middleware');
 
 const { validate } = require('../middlewares/validators.middleware');
 const { editProfileSchema } = require('../validators/users.validator');
-const {
-	myProfile,
-	specificProfile,
-	editMyProfile,
-	editSpecificProfile,
-} = require('../controllers/users.controller');
 
-router.get('/me', authMiddleware, myProfile);
-router.get('/:id', specificProfile);
+const usersController = require('../controllers/users.controller');
+
+router.get('/', authMiddleware, usersController.users);
+router.get('/me', authMiddleware, usersController.myProfile);
+router.get('/:id', usersController.specificProfile);
 
 router.put(
 	'/me',
 	authMiddleware,
 	validate(editProfileSchema),
 	upload.single('image'),
-	editMyProfile,
+	usersController.editMyProfile,
 );
 router.put(
 	'/:id',
 	validate(editProfileSchema),
 	upload.single('image'),
-	editSpecificProfile,
+	usersController.editSpecificProfile,
 );
 
 module.exports = router;

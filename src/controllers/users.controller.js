@@ -1,5 +1,20 @@
 const usersService = require('../services/users.service');
 
+async function users(req, res) {
+	try {
+		const id = req.user.id;
+		const response = await usersService.users(id);
+		res.status(200).json({
+			success: true,
+			message: response,
+		});
+	} catch (error) {
+		console.log(error);
+		const statusCode = error.statusCode || 400;
+		res.status(statusCode).json({ message: error.message });
+	}
+}
+
 async function myProfile(req, res) {
 	try {
 		const id = req.user.id;
@@ -68,9 +83,11 @@ async function editSpecificProfile(req, res) {
 		res.status(statusCode).json({ message: error.message });
 	}
 }
+
 module.exports = {
 	myProfile,
 	specificProfile,
 	editMyProfile,
 	editSpecificProfile,
+	users,
 };

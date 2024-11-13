@@ -1,4 +1,5 @@
 const User = require('../models').User;
+const { Op } = require('sequelize');
 const commonHelpers = require('../helpers/common.helper');
 async function profile(id) {
 	const user = await User.findByPk(id);
@@ -23,12 +24,18 @@ async function editProfile(id, image, payload) {
 
 	if (!user) commonHelpers.customError('user does not exist', 404);
 
-	user.name = name || user.name;
-	user.image = image || user.image;
-	user.about = about || user.about;
-	user.email = email || user.email;
+	user.name = name;
+	user.image = image;
+	user.about = about;
+	user.email = email;
 
 	await user.save();
 }
 
-module.exports = { profile, editProfile };
+async function users(id) {
+	const allUsers = await User.findAll({ where: { id: { [Op.not]: id } } });
+
+	return allUsers;
+}
+
+module.exports = { profile, editProfile, users };
