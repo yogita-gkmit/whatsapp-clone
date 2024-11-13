@@ -1,10 +1,20 @@
 const { Chat, User, UserChat } = require('../models');
 const { transporter, mailOptions } = require('../utils/email.util');
-const jwt = require('jsonwebtoken');
 
-async function createSingle(type, user_ids, loggedInId) {
-	const userDetails = await User.findByPk(user_ids[0]);
-	console.log(userDetails);
+const commonHelpers = require('../helpers/common.helper');
+const { reddis } = require('../config/redis');
+
+const Cryptr = require('cryptr');
+const cryptr = new Cryptr('myTotallySecretKey', {
+	encoding: 'base64',
+	pbkdf2Iterations: 10000,
+	saltLength: 10,
+});
+
+async function createSingle(payload, loggedInId) {
+	const { type, user_ids: userIds } = payload;
+	const userDetails = await User.findByPk(userIds[0]);
+
 	const name = userDetails.name;
 	const image = userDetails.image;
 	const description = userDetails.about;
@@ -13,25 +23,16 @@ async function createSingle(type, user_ids, loggedInId) {
 
 	await UserChat.bulkCreate([
 		{ chat_id: chat.id, user_id: loggedInId, is_admin: true },
-		{ chat_id: chat.id, user_id: user_ids[0], is_admin: true },
+		{ chat_id: chat.id, user_id: userIds[0], is_admin: true },
 	]);
-
-	// await UserChat.create({ chat_id: chat.id, user_id: loggedInId });
-	// await UserChat.create({ chat_id: chat.id, user_id: user_ids[0] });
 
 	return chat;
 }
 
-async function createGroup(
-	name,
-	description,
-	type,
-	image,
-	user_ids,
-	loggedInId,
-) {
-	user_ids = JSON.parse(user_ids);
-	console.log(typeof user_ids);
+async function createGroup(payload, image, loggedInId) {
+	const { name, description, type } = payload;
+	let { user_ids: userIds } = payload;
+	userIds = JSON.parse(userIds);
 	const chat = await Chat.create({ name, description, type, image });
 	await UserChat.create({
 		chat_id: chat.id,
@@ -39,7 +40,7 @@ async function createGroup(
 		is_admin: true,
 	});
 	await Promise.all(
-		user_ids.map(id => {
+		userIds.map(id => {
 			return UserChat.create({
 				chat_id: chat.id,
 				user_id: id,
@@ -51,93 +52,91 @@ async function createGroup(
 	return chat;
 }
 
-async function find(chat_id, id) {
-	console.log(chat_id);
-	const chat = await Chat.findByPk(chat_id);
+async function find(chatId, id) {
+	const chat = await Chat.findByPk(chatId);
 	if (chat.type === 'group') {
 		return chat;
 	} else {
-		const userIds = await UserChat.findAll({ chat_id: chat_id });
-		// console.log(userIds);
+		const userIds = await UserChat.findAll({ chat_id: chatId });
+
 		let otherUser;
 		userIds.forEach(userId => {
 			if (userId.id !== id) {
 				otherUser = userId;
 			}
 		});
-		// console.log(
-		// 	'#############################################',
-		// 	otherUser.user_id,
-		// );
 
 		const user = await User.findByPk(otherUser.user_id);
-		console.log(user);
+
 		return { user, chat };
 	}
 }
 
-async function edit(chat_id, id, name, description, image) {
-	const chat = await Chat.findByPk(chat_id);
-	if (!chat) throw new Error('Chat does not exist');
-	if (chat.type === 'one-to-one') {
-		throw new Error('Only a group chat can be edited');
+async function edit(chatId, id, payload, image) {
+	const { name, description } = payload;
+	const chat = await Chat.findByPk(chatId);
+	if (!chat) {
+		commonHelpers.customError('Chat does not exist', 404);
 	}
-	console.log(chat_id, id, name, description, image);
-	const usersChat = await UserChat.findOne({
-		where: { user_id: id, chat_id: chat_id },
-	});
-	if (!usersChat) {
-		const err = new Error('User not found');
-		err.statusCode = 404;
-		throw err;
-	} else if (!usersChat?.is_admin) {
-		throw new Error('User is not admin');
+	if (chat.type === 'one-to-one') {
+		commonHelpers.customError('Only a group chat can be edited', 400);
 	}
 
-	chat.name = name || chat.name;
-	chat.description = description || chat.description;
-	chat.image = image || chat.image;
+	const usersChat = await UserChat.findOne({
+		where: { user_id: id, chat_id: chatId },
+	});
+	if (!usersChat) {
+		commonHelpers.customError('User not found', 404);
+	} else if (!usersChat?.is_admin) {
+		commonHelpers.customError('User is not admin', 403);
+	}
+
+	chat.name = name;
+	chat.description = description;
+	chat.image = image;
 
 	await chat.save();
 }
 
-async function remove(chat_id, id) {
-	const chat = await Chat.findByPk(chat_id);
-	if (!chat) throw new Error('Chat does not exist');
+async function remove(chatId, id) {
+	const chat = await Chat.findByPk(chatId);
+	if (!chat) commonHelpers.customError('Chat does not exist', 404);
 	if (chat.type === 'one-to-one')
-		throw new Error('Can not delete one to one conversation');
-	console.log(chat_id, id);
+		commonHelpers.customError('Can not delete one to one conversation', 400);
+
 	const usersChat = await UserChat.findOne({
-		where: { user_id: id, chat_id: chat_id },
+		where: { user_id: id, chat_id: chatId },
 	});
 	if (!usersChat) {
-		throw new Error('User not found');
-	} else if (usersChat?.is_admin === false) {
-		throw new Error('User is not admin');
+		commonHelpers.customError('User not found', 404);
+	} else if (!usersChat?.is_admin) {
+		commonHelpers.customError('User is not admin', 403);
 	}
-	await UserChat.destroy({ where: { chat_id: chat_id } });
+	await UserChat.destroy({ where: { chat_id: chatId } });
 	await chat.destroy();
 }
 
-async function editrole(chat_id, id, user_ids) {
-	const chat = await Chat.findByPk(chat_id);
-	if (!chat) throw new Error('Chat does not exist');
+async function editrole(chatId, id, payload) {
+	const { user_ids: userIds } = payload;
+	const chat = await Chat.findByPk(chatId);
+	if (!chat) commonHelpers.customError('Chat does not exist', 404);
 	if (chat.type === 'one-to-one')
-		throw new Error('Not applicable for one to one conversation');
-	console.log(chat_id, id);
+		commonHelpers.customError(
+			'Not applicable for one to one conversation',
+			400,
+		);
 
 	const usersChat = await UserChat.findOne({
-		where: { user_id: id, chat_id: chat_id },
+		where: { user_id: id, chat_id: chatId },
 	});
 	if (!usersChat) {
-		throw new Error('User not found');
-	} else if (usersChat?.is_admin === false) {
-		throw new Error('User is not admin');
+		commonHelpers.customError('User not found', 404);
+	} else if (!usersChat?.is_admin) {
+		commonHelpers.customError('User is not admin', 403);
 	}
-	// console.log(chat_id, id);
-	// console.log('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$', user_ids);
+
 	await Promise.all(
-		user_ids.map(id => {
+		userIds.map(id => {
 			return UserChat.update(
 				{
 					is_admin: true,
@@ -148,86 +147,103 @@ async function editrole(chat_id, id, user_ids) {
 	);
 }
 
-async function invite(chat_id, id, user_id) {
-	const chat = Chat.findByPk(chat_id);
-	if (!chat) throw new Error('Chat does not exist');
+async function invite(chatId, id, payload) {
+	const { user_id: userId } = payload;
+	const chat = Chat.findByPk(chatId);
+	if (!chat) commonHelpers.customError('Chat does not exist', 404);
 	if (chat.type === 'one-to-one')
-		throw new Error('Not applicable for one to one conversation');
-	console.log(chat_id, id, user_id);
+		commonHelpers.customError(
+			'Not applicable for one to one conversation',
+			400,
+		);
+
 	const usersChat = await UserChat.findOne({
-		where: { chat_id: chat_id, user_id: id },
+		where: { chat_id: chatId, user_id: id },
 	});
 
 	if (!usersChat) {
-		throw new Error('User not found');
-	} else if (usersChat?.is_admin === false) {
-		throw new Error('User is not admin');
+		commonHelpers.customError('User not found', 404);
+	} else if (!usersChat?.is_admin) {
+		commonHelpers.customError('User is not admin', 403);
 	}
-	const user = await User.findByPk(user_id);
-	console.log(user);
-	console.log(user.email);
-	if (!user) throw new Error('User does not exist');
-	const token = jwt.sign({ user_id: user_id }, process.env.JWT_SECRET, {
-		expiresIn: '1h',
-	});
+	const user = await User.findByPk(userId);
+
+	if (!user) commonHelpers.customError('User does not exist', 404);
+	const token = cryptr.encrypt(userId);
+	await reddis.set(userId, token, 'ex', 60 * 60 * 24);
+
 	console.log(token);
 	const mailOptions = {
 		from: process.env.MAIL_USER,
 		to: user.email,
 		subject: `Email invite to be in ${chat.name} group`,
 		text: `Join ${chat.name} by accepting the url below.
-		http://localhost:5000/joingroup/:${chat_id}?${token}`,
+		http://localhost:5000/joingroup/:${chatId}?${token}`,
 	};
 	await transporter.sendMail(mailOptions, (error, info) => {
 		if (error) {
 			console.error(error);
+			commonHelpers.customError('Error sending mail', 400);
 		} else {
 			console.log('Email sent: ' + info.response);
 		}
 	});
 }
 
-async function addUser(chat_id, id, token) {
-	const decoded = jwt.verify(token, process.env.JWT_SECRET);
-	if (!decoded) {
-		throw new Error('Invalid invite token');
+async function addUser(chatId, id, payload) {
+	const { token } = payload;
+	const decoded = cryptr.decrypt(token);
+	const inviteToken = await reddis.get(id);
+
+	if (!inviteToken) {
+		commonHelpers.customError('Token expired or invalid', 400);
+	}
+	const inviteDecoded = await cryptr.decrypt(inviteToken);
+	if (decoded !== inviteDecoded) {
+		commonHelpers.customError('Invalid token', 403);
 	}
 
-	if (id !== decoded.user_id) {
-		throw new Error('Invalid invite');
+	if (id !== decoded) {
+		commonHelpers.customError('Invalid invite', 400);
 	}
 
-	const chat = await Chat.findByPk(chat_id);
-	if (!chat) throw new Error('Chat does not exist');
+	const chat = await Chat.findByPk(chatId);
+	if (!chat) commonHelpers.customError('Chat does not exist', 404);
 	if (chat.type === 'one-to-one')
-		throw new Error('Not applicable for one to one conversation');
+		commonHelpers.customError(
+			'Not applicable for one to one conversation',
+			400,
+		);
 
 	await UserChat.create({
-		chat_id: chat_id,
-		user_id: decoded.user_id,
+		chat_id: chatId,
+		user_id: decoded,
 		is_admin: false,
 	});
 }
 
-async function removeUser(id, chat_id, user_id) {
-	const chat = await Chat.findByPk(chat_id);
-	if (!chat) throw new Error('Chat does not exist');
+async function removeUser(id, chatId, userId) {
+	const chat = await Chat.findByPk(chatId);
+	if (!chat) commonHelpers.customError('Chat does not exist', 404);
 
 	if (chat.type === 'one-to-one')
-		throw new Error('Not applicable for one to one conversation');
-	console.log(chat_id, id, user_id);
+		commonHelpers.customError(
+			'Not applicable for one to one conversation',
+			400,
+		);
+
 	const usersChat = await UserChat.findOne({
-		where: { chat_id: chat_id, user_id: id },
+		where: { chat_id: chatId, user_id: id },
 	});
 
 	if (!usersChat) {
-		throw new Error('User not found');
+		commonHelpers.customError('User not found', 404);
 	} else if (usersChat?.is_admin === false) {
-		throw new Error('User is not admin');
+		commonHelpers.customError('User is not admin', 403);
 	}
 
 	await UserChat.destroy({
-		where: { chat_id: chat_id, user_id: user_id },
+		where: { chat_id: chatId, user_id: userId },
 	});
 }
 

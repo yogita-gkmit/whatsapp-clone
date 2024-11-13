@@ -6,12 +6,10 @@ const { reddis } = require('../config/redis');
 const { transporter, mailOptions } = require('../utils/email.util');
 const { validUser } = require('../helpers/auth.helper');
 const { addTokenToBlacklist } = require('../helpers/redis.helper');
+const commonHelpers = require('../helpers/common.helper');
 
 const dotenv = require('dotenv');
 dotenv.config();
-
-const redis = require('redis');
-const client = redis.createClient();
 
 async function generateOtp() {
 	let otp = otpGenerator.generate(6, {
@@ -22,12 +20,13 @@ async function generateOtp() {
 
 	return otp;
 }
-async function sendOtp(email) {
+async function sendOtp(payload) {
+	const { email } = payload;
 	if (!(await validUser(email))) {
-		throw new Error('User is not registered');
+		commonHelpers.customError('User is not registered', 404);
 	}
 	const otp = await generateOtp();
-	await reddis.set(email, otp);
+	await reddis.set(email, otp, 'ex', 500);
 
 	const mailOptions = {
 		from: process.env.MAIL_USER,
@@ -38,6 +37,7 @@ async function sendOtp(email) {
 	await transporter.sendMail(mailOptions, (error, info) => {
 		if (error) {
 			console.error(error);
+			commonHelpers.customError('Error sending mail', 400);
 		} else {
 			console.log('Email sent: ' + info.response);
 		}
@@ -46,7 +46,8 @@ async function sendOtp(email) {
 	return { message: 'otp sent successfully', otp };
 }
 
-async function verifyOtp(email, otp) {
+async function verifyOtp(payload) {
+	const { email, otp } = payload;
 	if (!(await validUser(email))) {
 		return { message: 'User is not registered' };
 	}
@@ -64,9 +65,10 @@ async function verifyOtp(email, otp) {
 	return token;
 }
 
-async function create(name, image, about, email) {
+async function create(payload, image) {
+	const { name, about, email } = payload;
 	if (await validUser(email)) {
-		throw new Error('User already registered');
+		commonHelpers.customError('User already registered', 400);
 	}
 	await User.create({
 		name,
@@ -78,20 +80,20 @@ async function create(name, image, about, email) {
 
 async function remove(token) {
 	if (!token) {
-		throw new Error('Token is required for logout');
+		commonHelpers.customError('Token is required for logout', 401);
 	}
 	try {
 		const decodedToken = jwt.decode(token);
 		if (!decodedToken) {
-			throw new Error('Invalid token');
+			commonHelpers.customError('Invalid token', 401);
 		}
 		const expiresIn = 3600;
 		await addTokenToBlacklist(token, expiresIn);
-		console.log('Token added to blacklist');
+
 		return { message: 'Logged out successfully' };
 	} catch (error) {
 		console.log(error);
-		throw new Error('Logout failed');
+		commonHelpers.customError('Logout failed', 400);
 	}
 }
 

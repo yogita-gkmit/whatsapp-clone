@@ -1,63 +1,62 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models').User;
-const {
-	sendOtp,
-	verifyOtp,
-	create,
-	remove,
-} = require('../services/auth.service');
+
+const authServices = require('../services/auth.service');
 const { validUser } = require('../helpers/auth.helper');
 
 async function register(req, res) {
 	try {
-		const { name, about, email } = req.body;
+		const payload = req.body;
 		const image = req.file?.path;
-		console.log(image, email, about, name);
-		await create(name, image, about, email);
+		await authServices.create(payload, image);
 		res.status(200).json({ message: `User has been successfully created` });
 	} catch (error) {
-		console.log('Error registering the user', error);
-		res.status(400).json({ message: error.message });
+		console.log(error);
+		const statusCode = error.statusCode || 400;
+		res.status(statusCode).json({ message: error.message });
 	}
 }
 
 async function sendOTP(req, res) {
 	try {
-		const { email } = req.body;
+		const payload = req.body;
 
-		const response = await sendOtp(email);
+		const response = await authServices.sendOtp(payload);
 		res.status(200).json({
 			success: true,
 			message: response,
 		});
 	} catch (error) {
 		console.log(error);
-		res.status(400).json({ message: error.message });
+		const statusCode = error.statusCode || 400;
+		res.status(statusCode).json({ message: error.message });
 	}
 }
 
 async function verifyOTP(req, res) {
 	try {
-		const { email, otp } = req.body;
-		const token = await verifyOtp(email, otp);
+		const payload = req.body;
+		const token = await authServices.verifyOtp(payload);
 
 		res.status(200).json({ message: 'User verified successfully', token });
 	} catch (error) {
 		console.log(error);
-		res.status(400).json({ message: error.message });
+		const statusCode = error.statusCode || 400;
+		res.status(statusCode).json({ message: error.message });
 	}
 }
 
 async function logout(req, res) {
 	try {
 		const token = req.headers['authorization'];
-		const result = await remove(token);
+		const result = await authServices.remove(token);
 		res.status(200).json({
 			message: result.message || 'Successfully logged out',
 		});
 	} catch (error) {
 		console.log(error);
-		res.status(400).json({ message: error.message });
+		const statusCode = error.statusCode || 400;
+		res.status(statusCode).json({ message: error.message });
 	}
 }
 
