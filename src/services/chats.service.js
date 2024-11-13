@@ -1,4 +1,4 @@
-const { Chat, User, UserChat } = require('../models');
+const { Chat, User, UserChat, Message } = require('../models');
 const { transporter, mailOptions } = require('../utils/email.util');
 
 const commonHelpers = require('../helpers/common.helper');
@@ -13,6 +13,9 @@ const cryptr = new Cryptr('myTotallySecretKey', {
 
 async function createSingle(payload, loggedInId) {
 	const { type, user_ids: userIds } = payload;
+	if (!chat) {
+		throw commonHelpers.customError('Chat does not exist', 404);
+	}
 	const userDetails = await User.findByPk(userIds[0]);
 
 	const name = userDetails.name;
@@ -34,6 +37,9 @@ async function createGroup(payload, image, loggedInId) {
 	let { user_ids: userIds } = payload;
 	userIds = JSON.parse(userIds);
 	const chat = await Chat.create({ name, description, type, image });
+	if (!chat) {
+		throw commonHelpers.customError('Chat does not exist', 404);
+	}
 	await UserChat.create({
 		chat_id: chat.id,
 		user_id: loggedInId,
@@ -54,6 +60,9 @@ async function createGroup(payload, image, loggedInId) {
 
 async function find(chatId, id) {
 	const chat = await Chat.findByPk(chatId);
+	if (!chat) {
+		throw commonHelpers.customError('Chat does not exist', 404);
+	}
 	if (chat.type === 'group') {
 		return chat;
 	} else {
@@ -76,19 +85,19 @@ async function edit(chatId, id, payload, image) {
 	const { name, description } = payload;
 	const chat = await Chat.findByPk(chatId);
 	if (!chat) {
-		commonHelpers.customError('Chat does not exist', 404);
+		throw commonHelpers.customError('Chat does not exist', 404);
 	}
 	if (chat.type === 'one-to-one') {
-		commonHelpers.customError('Only a group chat can be edited', 400);
+		throw commonHelpers.customError('Only a group chat can be edited', 400);
 	}
 
 	const usersChat = await UserChat.findOne({
 		where: { user_id: id, chat_id: chatId },
 	});
 	if (!usersChat) {
-		commonHelpers.customError('User not found', 404);
+		throw commonHelpers.customError('User not found', 404);
 	} else if (!usersChat?.is_admin) {
-		commonHelpers.customError('User is not admin', 403);
+		throw commonHelpers.customError('User is not admin', 403);
 	}
 
 	chat.name = name;
@@ -100,17 +109,20 @@ async function edit(chatId, id, payload, image) {
 
 async function remove(chatId, id) {
 	const chat = await Chat.findByPk(chatId);
-	if (!chat) commonHelpers.customError('Chat does not exist', 404);
+	if (!chat) throw commonHelpers.customError('Chat does not exist', 404);
 	if (chat.type === 'one-to-one')
-		commonHelpers.customError('Can not delete one to one conversation', 400);
+		throw commonHelpers.customError(
+			'Can not delete one to one conversation',
+			400,
+		);
 
 	const usersChat = await UserChat.findOne({
 		where: { user_id: id, chat_id: chatId },
 	});
 	if (!usersChat) {
-		commonHelpers.customError('User not found', 404);
+		throw commonHelpers.customError('User not found', 404);
 	} else if (!usersChat?.is_admin) {
-		commonHelpers.customError('User is not admin', 403);
+		throw commonHelpers.customError('User is not admin', 403);
 	}
 	await UserChat.destroy({ where: { chat_id: chatId } });
 	await chat.destroy();
@@ -119,9 +131,9 @@ async function remove(chatId, id) {
 async function editrole(chatId, id, payload) {
 	const { user_ids: userIds } = payload;
 	const chat = await Chat.findByPk(chatId);
-	if (!chat) commonHelpers.customError('Chat does not exist', 404);
+	if (!chat) throw commonHelpers.customError('Chat does not exist', 404);
 	if (chat.type === 'one-to-one')
-		commonHelpers.customError(
+		throw commonHelpers.customError(
 			'Not applicable for one to one conversation',
 			400,
 		);
@@ -130,9 +142,9 @@ async function editrole(chatId, id, payload) {
 		where: { user_id: id, chat_id: chatId },
 	});
 	if (!usersChat) {
-		commonHelpers.customError('User not found', 404);
+		throw commonHelpers.customError('User not found', 404);
 	} else if (!usersChat?.is_admin) {
-		commonHelpers.customError('User is not admin', 403);
+		throw commonHelpers.customError('User is not admin', 403);
 	}
 
 	await Promise.all(
@@ -150,9 +162,9 @@ async function editrole(chatId, id, payload) {
 async function invite(chatId, id, payload) {
 	const { user_id: userId } = payload;
 	const chat = Chat.findByPk(chatId);
-	if (!chat) commonHelpers.customError('Chat does not exist', 404);
+	if (!chat) throw commonHelpers.customError('Chat does not exist', 404);
 	if (chat.type === 'one-to-one')
-		commonHelpers.customError(
+		throw commonHelpers.customError(
 			'Not applicable for one to one conversation',
 			400,
 		);
@@ -162,16 +174,17 @@ async function invite(chatId, id, payload) {
 	});
 
 	if (!usersChat) {
-		commonHelpers.customError('User not found', 404);
+		throw commonHelpers.customError('User not found', 404);
 	} else if (!usersChat?.is_admin) {
-		commonHelpers.customError('User is not admin', 403);
+		throw commonHelpers.customError('User is not admin', 403);
 	}
 	const user = await User.findByPk(userId);
 
-	if (!user) commonHelpers.customError('User does not exist', 404);
+	if (!user) throw commonHelpers.customError('User does not exist', 404);
 	const token = cryptr.encrypt(userId);
 	await reddis.set(userId, token, 'ex', 60 * 60 * 24);
 
+	// TODO: REMOVE
 	console.log(token);
 	const mailOptions = {
 		from: process.env.MAIL_USER,
@@ -183,7 +196,7 @@ async function invite(chatId, id, payload) {
 	await transporter.sendMail(mailOptions, (error, info) => {
 		if (error) {
 			console.error(error);
-			commonHelpers.customError('Error sending mail', 400);
+			throw commonHelpers.customError('Error sending mail', 400);
 		} else {
 			console.log('Email sent: ' + info.response);
 		}
@@ -196,21 +209,21 @@ async function addUser(chatId, id, payload) {
 	const inviteToken = await reddis.get(id);
 
 	if (!inviteToken) {
-		commonHelpers.customError('Token expired or invalid', 400);
+		throw commonHelpers.customError('Token expired or invalid', 400);
 	}
 	const inviteDecoded = await cryptr.decrypt(inviteToken);
 	if (decoded !== inviteDecoded) {
-		commonHelpers.customError('Invalid token', 403);
+		throw commonHelpers.customError('Invalid token', 403);
 	}
 
 	if (id !== decoded) {
-		commonHelpers.customError('Invalid invite', 400);
+		throw commonHelpers.customError('Invalid invite', 400);
 	}
 
 	const chat = await Chat.findByPk(chatId);
-	if (!chat) commonHelpers.customError('Chat does not exist', 404);
+	if (!chat) throw commonHelpers.customError('Chat does not exist', 404);
 	if (chat.type === 'one-to-one')
-		commonHelpers.customError(
+		throw commonHelpers.customError(
 			'Not applicable for one to one conversation',
 			400,
 		);
@@ -224,10 +237,10 @@ async function addUser(chatId, id, payload) {
 
 async function removeUser(id, chatId, userId) {
 	const chat = await Chat.findByPk(chatId);
-	if (!chat) commonHelpers.customError('Chat does not exist', 404);
+	if (!chat) throw commonHelpers.customError('Chat does not exist', 404);
 
 	if (chat.type === 'one-to-one')
-		commonHelpers.customError(
+		throw commonHelpers.customError(
 			'Not applicable for one to one conversation',
 			400,
 		);
@@ -237,14 +250,78 @@ async function removeUser(id, chatId, userId) {
 	});
 
 	if (!usersChat) {
-		commonHelpers.customError('User not found', 404);
-	} else if (usersChat?.is_admin === false) {
-		commonHelpers.customError('User is not admin', 403);
+		throw commonHelpers.customError('User not found', 404);
+	} else if (!usersChat?.is_admin) {
+		throw commonHelpers.customError('User is not admin', 403);
 	}
 
 	await UserChat.destroy({
 		where: { chat_id: chatId, user_id: userId },
 	});
+}
+
+async function createMessage(chatId, id, payload, media) {
+	const { message } = payload;
+
+	const chat = await Chat.findByPk(chatId);
+	if (!chat) {
+		throw commonHelpers.customError('Chat does not exist', 404);
+	}
+	const user = await User.findByPk(id);
+
+	if (!user) {
+		throw commonHelpers.customError('User does not exist', 404);
+	}
+
+	const usersChat = await UserChat.findOne({
+		where: { chat_id: chatId, user_id: id },
+	});
+
+	if (!usersChat) {
+		throw commonHelpers.customError('User not found in chat', 404);
+	}
+
+	await Message.create({
+		user_id: id,
+		chat_id: chatId,
+		message: message,
+		media: media,
+	});
+}
+
+async function editMessage(chatId, messageId, id, payload, media) {
+	const { message } = payload;
+	let updateRowCount, udpatedMessage;
+
+	const lastMessage = await Message.findAll({
+		where: { chat_id: chatId, user_id: id },
+		limit: 1,
+		order: [['created_at', 'DESC']],
+		plain: true,
+	});
+	if (lastMessage.id !== messageId) {
+		throw commonHelpers.customError('user can not edit this message', 403);
+	}
+	[updateRowCount, udpatedMessage] = await Message.update(
+		{
+			message: message,
+			media: media,
+		},
+		{
+			where: {
+				id: messageId,
+				user_id: id,
+				chat_id: chatId,
+			},
+			returning: true,
+		},
+	);
+
+	if (updateRowCount === 0) {
+		throw commonHelpers.customError('Message not found', 404);
+	}
+
+	return udpatedMessage;
 }
 
 module.exports = {
@@ -257,4 +334,6 @@ module.exports = {
 	addUser,
 	invite,
 	removeUser,
+	createMessage,
+	editMessage,
 };

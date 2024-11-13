@@ -3,10 +3,12 @@ const { verifyToken } = require('../helpers/auth.helper');
 
 async function authMiddleware(req, res, next) {
 	const token = req.headers['authorization'];
-	if (!token) {
-		throw new Error('Token is required');
-	}
+
 	try {
+		if (!token) {
+			throw new Error('Token is required');
+		}
+
 		const isBlacklisted = await isTokenBlacklisted(token);
 		if (isBlacklisted) {
 			throw new Error('Token is blacklisted');
@@ -16,7 +18,7 @@ async function authMiddleware(req, res, next) {
 		next();
 	} catch (error) {
 		console.log(error);
-		throw new Error('Unauthorized');
+		res.status(401).json({ message: 'Unauthorized' });
 	}
 }
 

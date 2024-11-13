@@ -2,27 +2,51 @@ const express = require('express');
 const router = express.Router();
 const { authMiddleware } = require('../middlewares/auth.middleware');
 const { upload } = require('../middlewares/multer.middleware');
-const {
-	createChat,
-	getChat,
-	editChat,
-	deleteChat,
-	editAdmin,
-	addUser,
-	emailInvite,
-	removeUser,
-} = require('../controllers/chats.controller');
 
-router.post('/', authMiddleware, upload.single('image'), createChat);
-router.get('/:chatId', authMiddleware, getChat);
-router.put('/:chatId', authMiddleware, upload.single('image'), editChat);
-router.delete('/:chatId', authMiddleware, deleteChat);
-router.put('/:chatId/users', authMiddleware, editAdmin);
+const chatsController = require('../controllers/chats.controller');
 
-router.post('/:chatId/emailInvite', authMiddleware, emailInvite);
+router.post(
+	'/',
+	authMiddleware,
+	upload.single('image'),
+	chatsController.createChat,
+);
+router.get('/:chatId', authMiddleware, chatsController.getChat);
+router.put(
+	'/:chatId',
+	authMiddleware,
+	upload.single('image'),
+	chatsController.editChat,
+);
+router.delete('/:chatId', authMiddleware, chatsController.deleteChat);
+router.put('/:chatId/users', authMiddleware, chatsController.editAdmin);
 
-router.post('/:chatId/usersChats', authMiddleware, addUser);
+router.post(
+	'/:chatId/emailInvite',
+	authMiddleware,
+	chatsController.emailInvite,
+);
 
-router.delete('/:chatId/users/:userId', authMiddleware, removeUser);
+router.post('/:chatId/usersChats', authMiddleware, chatsController.addUser);
+
+router.delete(
+	'/:chatId/users/:userId',
+	authMiddleware,
+	chatsController.removeUser,
+);
+
+router.post(
+	'/:chatId/messages',
+	authMiddleware,
+	upload.single('media'),
+	chatsController.createMessage,
+);
+
+router.put(
+	'/:chatId/messages/:messageId',
+	authMiddleware,
+	upload.single('media'),
+	chatsController.editMessage,
+);
 
 module.exports = router;

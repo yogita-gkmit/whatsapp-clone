@@ -33,6 +33,8 @@ async function editProfile(id, image, payload) {
 }
 
 async function users(id) {
+	const user = await User.findByPk(id);
+	if (!user) commonHelpers.customError('user does not exist', 404);
 	const allUsers = await User.findAll({ where: { id: { [Op.not]: id } } });
 
 	return allUsers;

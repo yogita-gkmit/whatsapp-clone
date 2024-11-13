@@ -122,6 +122,42 @@ async function removeUser(req, res) {
 	}
 }
 
+async function createMessage(req, res) {
+	try {
+		const { chatId } = req.params;
+		const media = req.file?.path;
+		const id = req.user.id;
+		const payload = req.body;
+		await chatsService.createMessage(chatId, id, payload, media);
+		res.status(201).json({ message: 'successfully added the message' });
+	} catch (error) {
+		console.log(error);
+		const statusCode = error.statusCode || 400;
+		res.status(statusCode).json({ message: error.message });
+	}
+}
+
+async function editMessage(req, res) {
+	try {
+		const { chatId, messageId } = req.params;
+		const media = req.file?.path;
+		const id = req.user.id;
+		const payload = req.body;
+		const response = await chatsService.editMessage(
+			chatId,
+			messageId,
+			id,
+			payload,
+			media,
+		);
+		res.status(200).json({ message: 'Message edited successfully', response });
+	} catch (error) {
+		console.log(error);
+		const statusCode = error.statusCode || 400;
+		res.status(statusCode).json({ message: error.message });
+	}
+}
+
 module.exports = {
 	createChat,
 	getChat,
@@ -131,4 +167,6 @@ module.exports = {
 	addUser,
 	emailInvite,
 	removeUser,
+	createMessage,
+	editMessage,
 };
