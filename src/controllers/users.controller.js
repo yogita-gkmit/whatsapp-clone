@@ -3,7 +3,8 @@ const usersService = require('../services/users.service');
 async function users(req, res) {
 	try {
 		const id = req.user.id;
-		const response = await usersService.users(id);
+		const { page } = req.query;
+		const response = await usersService.users(id, page);
 		res.status(200).json({
 			success: true,
 			message: response,

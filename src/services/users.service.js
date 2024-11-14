@@ -1,6 +1,7 @@
 const User = require('../models').User;
 const { Op } = require('sequelize');
 const commonHelpers = require('../helpers/common.helper');
+
 async function profile(id) {
 	const user = await User.findByPk(id);
 	if (!user) commonHelpers.customError('User Not Found', 404);
@@ -32,10 +33,18 @@ async function editProfile(id, image, payload) {
 	await user.save();
 }
 
-async function users(id) {
+async function users(id, page = 0) {
 	const user = await User.findByPk(id);
 	if (!user) commonHelpers.customError('user does not exist', 404);
-	const allUsers = await User.findAll({ where: { id: { [Op.not]: id } } });
+
+	const limit = 10;
+	const offset = limit * page;
+
+	const allUsers = await User.findAll({
+		where: { id: { [Op.not]: id } },
+		offset: offset,
+		limit: limit,
+	});
 
 	return allUsers;
 }

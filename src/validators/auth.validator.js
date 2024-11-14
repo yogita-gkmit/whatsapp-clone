@@ -1,18 +1,18 @@
-const joi = require('joi');
+const Joi = require('joi');
 
-const registerSchema = joi.object({
-	name: joi.string(),
-	about: joi.string().required(),
-	email: joi.string().email().required(),
+const registerSchema = Joi.object({
+	name: Joi.string(),
+	about: Joi.string().required(),
+	email: Joi.string().email().required(),
 });
 
-const sendOTPSchema = joi.object({
-	email: joi.string().email().required(),
+const sendOTPSchema = Joi.object({
+	email: Joi.string().email().required(),
 });
 
-const verifyOTPSchema = joi.object({
-	email: joi.string().email().required(),
-	otp: joi.string().length(6).required(),
+const verifyOTPSchema = Joi.object({
+	email: Joi.string().email().required(),
+	otp: Joi.string().length(6).required(),
 });
 
 module.exports = { registerSchema, sendOTPSchema, verifyOTPSchema };
