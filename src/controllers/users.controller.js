@@ -85,10 +85,28 @@ async function editSpecificProfile(req, res) {
 	}
 }
 
+async function inbox(req, res) {
+	try {
+		const { id } = req.params;
+		const loggedInId = req.user.id;
+
+		const response = await usersService.inbox(id, loggedInId);
+		res.status(200).json({
+			success: true,
+			message: response,
+		});
+	} catch (error) {
+		console.log(error);
+		const statusCode = error.statusCode || 400;
+		res.status(statusCode).json({ message: error.message });
+	}
+}
+
 module.exports = {
 	myProfile,
 	specificProfile,
 	editMyProfile,
 	editSpecificProfile,
 	users,
+	inbox,
 };

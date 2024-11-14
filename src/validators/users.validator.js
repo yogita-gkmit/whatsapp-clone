@@ -1,9 +1,9 @@
 const Joi = require('joi');
 
 const editProfileSchema = Joi.object({
-	name: Joi.string(),
-	about: Joi.string(),
-	email: Joi.string().email(),
+	name: Joi.string().required(),
+	about: Joi.string().required(),
+	email: Joi.string().email().required(),
 });
 
 const queryPageSchema = Joi.object({

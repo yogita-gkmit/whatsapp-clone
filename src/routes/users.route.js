@@ -15,8 +15,8 @@ router.get('/:id', usersController.specificProfile);
 router.put(
 	'/me',
 	authMiddleware,
-	validate(editProfileSchema),
 	upload.single('image'),
+	validate(editProfileSchema),
 	usersController.editMyProfile,
 );
 router.put(
@@ -25,5 +25,8 @@ router.put(
 	upload.single('image'),
 	usersController.editSpecificProfile,
 );
+
+// TO INBOX:
+router.get('/:id/chats', authMiddleware, usersController.inbox);
 
 module.exports = router;

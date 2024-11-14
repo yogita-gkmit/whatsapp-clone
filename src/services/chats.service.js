@@ -294,8 +294,8 @@ async function editMessage(chatId, messageId, id, payload, media) {
 
 	const lastMessage = await Message.findAll({
 		where: { chat_id: chatId, user_id: id },
-		limit: 1,
 		order: [['created_at', 'DESC']],
+		limit: 1,
 		plain: true,
 	});
 	if (lastMessage.id !== messageId) {
@@ -326,8 +326,8 @@ async function editMessage(chatId, messageId, id, payload, media) {
 async function deleteMessage(chatId, messageId, id, payload, media) {
 	const lastMessage = await Message.findAll({
 		where: { chat_id: chatId, user_id: id },
-		limit: 1,
 		order: [['created_at', 'DESC']],
+		limit: 1,
 		plain: true,
 	});
 	if (lastMessage.id !== messageId) {
