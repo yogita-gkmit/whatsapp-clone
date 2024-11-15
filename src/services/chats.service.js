@@ -41,7 +41,7 @@ async function createSingle(payload, loggedInId) {
 		return chat;
 	} catch (error) {
 		await transaction.rollback();
-		console.log(error);
+		throw error;
 	}
 }
 
@@ -83,7 +83,7 @@ async function createGroup(payload, image, loggedInId) {
 		return chat;
 	} catch (error) {
 		await transaction.rollback();
-		console.log(error);
+		throw error;
 	}
 }
 
@@ -147,7 +147,7 @@ async function edit(chatId, id, payload, image) {
 		return response;
 	} catch (error) {
 		await transaction.rollback();
-		console.log(error);
+		throw error;
 	}
 }
 
@@ -182,7 +182,7 @@ async function remove(chatId, id) {
 		return 'Group deleted successfully';
 	} catch (error) {
 		await transaction.rollback();
-		console.log(error);
+		throw error;
 	}
 }
 
@@ -224,65 +224,54 @@ async function editrole(chatId, id, payload) {
 		return response;
 	} catch (error) {
 		await transaction.rollback();
-		console.log(error);
+		throw error;
 	}
 }
 
-// remove transactions from invite
 async function invite(chatId, id, payload) {
-	const transaction = await sequelize.transaction();
+	const { user_id: userId } = payload;
+	const chat = Chat.findByPk(chatId);
+	if (!chat) throw commonHelpers.customError('Chat does not exist', 404);
+	if (chat.type === 'one-to-one')
+		throw commonHelpers.customError(
+			'Not applicable for one to one conversation',
+			400,
+		);
 
-	try {
-		const { user_id: userId } = payload;
-		const chat = Chat.findByPk(chatId);
-		if (!chat) throw commonHelpers.customError('Chat does not exist', 404);
-		if (chat.type === 'one-to-one')
-			throw commonHelpers.customError(
-				'Not applicable for one to one conversation',
-				400,
-			);
+	const usersChat = await UserChat.findOne({
+		where: { chat_id: chatId, user_id: id },
+	});
 
-		const usersChat = await UserChat.findOne({
-			where: { chat_id: chatId, user_id: id },
-		});
-
-		if (!usersChat) {
-			throw commonHelpers.customError('User not found', 404);
-		} else if (!usersChat?.is_admin) {
-			throw commonHelpers.customError('User is not admin', 403);
-		}
-		const user = await User.findByPk(userId);
-
-		if (!user) throw commonHelpers.customError('User does not exist', 404);
-		const token = cryptr.encrypt(userId);
-		await reddis.set(userId, token, 'ex', 60 * 60 * 24);
-
-		// TODO: REMOVE
-		// console.log(token);
-		const mailOptions = {
-			from: process.env.MAIL_USER,
-			to: user.email,
-			subject: `Email invite to be in ${chat.name} group`,
-			text: `Join ${chat.name} by accepting the url below.
-		http://localhost:5000/joingroup/:${chatId}?${token}`,
-		};
-
-		await transporter.sendMail(mailOptions, (error, info) => {
-			if (error) {
-				console.error(error);
-				throw commonHelpers.customError('Error sending mail', 400);
-			} else {
-				console.log('Email sent: ' + info.response);
-			}
-		});
-		await transaction.commit();
-
-		// TO REMOVE: token (temporary)
-		return `Mail sent successfully, token: ${token}`;
-	} catch (error) {
-		await transaction.rollback();
-		console.log(error);
+	if (!usersChat) {
+		throw commonHelpers.customError('User not found', 404);
+	} else if (!usersChat?.is_admin) {
+		throw commonHelpers.customError('User is not admin', 403);
 	}
+	const user = await User.findByPk(userId);
+
+	if (!user) throw commonHelpers.customError('User does not exist', 404);
+	const token = cryptr.encrypt(userId);
+	await reddis.set(userId, token, 'ex', 60 * 60 * 24);
+
+	const mailOptions = {
+		from: process.env.MAIL_USER,
+		to: user.email,
+		subject: `Email invite to be in ${chat.name} group`,
+		text: `Join ${chat.name} by accepting the url below.
+		http://localhost:5000/joingroup/:${chatId}?${token}`,
+	};
+
+	await transporter.sendMail(mailOptions, (error, info) => {
+		if (error) {
+			console.error(error);
+			throw commonHelpers.customError('Error sending mail', 400);
+		} else {
+			console.log('Email sent: ' + info.response);
+		}
+	});
+
+	// TO REMOVE: token (temporary)
+	return `Mail sent successfully, token: ${token}`;
 }
 
 async function addUser(chatId, id, payload) {
@@ -327,7 +316,7 @@ async function addUser(chatId, id, payload) {
 		return response;
 	} catch (error) {
 		await transaction.rollback();
-		console.log(error);
+		throw error;
 	}
 }
 
@@ -361,7 +350,7 @@ async function removeUser(id, chatId, userId) {
 		await transaction.commit();
 	} catch (error) {
 		await transaction.rollback();
-		console.log(error);
+		throw error;
 	}
 }
 
@@ -404,7 +393,7 @@ async function createMessage(chatId, id, payload, media) {
 		return response;
 	} catch (error) {
 		await transaction.rollback();
-		console.log(error);
+		throw error;
 	}
 }
 
@@ -420,6 +409,7 @@ async function editMessage(chatId, messageId, id, payload, media) {
 			limit: 1,
 			plain: true,
 		});
+
 		if (lastMessage.id !== messageId) {
 			throw commonHelpers.customError('user can not edit this message', 403);
 		}
@@ -440,7 +430,6 @@ async function editMessage(chatId, messageId, id, payload, media) {
 				transaction,
 			},
 		);
-
 		if (updateRowCount === 0) {
 			throw commonHelpers.customError('Message not found', 404);
 		}
@@ -448,7 +437,7 @@ async function editMessage(chatId, messageId, id, payload, media) {
 		return updatedMessage;
 	} catch (error) {
 		await transaction.rollback();
-		console.log(error);
+		throw error;
 	}
 }
 
@@ -474,8 +463,39 @@ async function deleteMessage(chatId, messageId, id) {
 		return 'message deleted successfully';
 	} catch (error) {
 		await transaction.rollback();
-		console.log(error);
+		throw error;
 	}
+}
+
+async function displayMessages(chatId, id, page = 0) {
+	if (!chatId) {
+		throw commonHelpers.customError('chat does not exist', 404);
+	}
+
+	const usersChatIds = await UserChat.findAll({ where: { chat_id: chatId } });
+
+	let flag = false;
+	usersChatIds.forEach(userId => {
+		if (userId.user_id === id) {
+			flag = true;
+		}
+	});
+
+	if (!flag) {
+		throw commonHelpers.customError('user can not access this chat', 403);
+	}
+
+	const limit = 1;
+	const offset = limit * page;
+
+	const message = await Message.findAll({
+		where: { chat_id: chatId },
+		user_id: { [Op.in]: usersChatIds },
+		offset: offset,
+		limit: limit,
+	});
+
+	return message;
 }
 
 module.exports = {
@@ -491,4 +511,5 @@ module.exports = {
 	createMessage,
 	editMessage,
 	deleteMessage,
+	displayMessages,
 };

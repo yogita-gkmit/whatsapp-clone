@@ -96,4 +96,9 @@ router.delete(
 	chatsController.deleteMessage,
 );
 
+router.get(
+	'/:chatId/messages',
+	authMiddleware,
+	chatsController.displayMessages,
+);
 module.exports = router;

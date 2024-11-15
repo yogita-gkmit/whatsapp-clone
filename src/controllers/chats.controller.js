@@ -170,6 +170,20 @@ async function deleteMessage(req, res) {
 		res.status(statusCode).json({ message: error.message });
 	}
 }
+async function displayMessages(req, res) {
+	try {
+		const { chatId } = req.params;
+		const { page } = req.query;
+		const id = req.user.id;
+
+		const response = await chatsService.displayMessages(chatId, id, page);
+		res.status(200).json({ message: response });
+	} catch (error) {
+		console.log(error);
+		const statusCode = error.statusCode || 400;
+		res.status(statusCode).json({ message: error.message });
+	}
+}
 
 module.exports = {
 	createChat,
@@ -183,4 +197,5 @@ module.exports = {
 	createMessage,
 	editMessage,
 	deleteMessage,
+	displayMessages,
 };
