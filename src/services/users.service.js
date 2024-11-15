@@ -22,15 +22,28 @@ async function profile(id) {
 }
 
 async function editProfile(id, image, payload) {
-	const { name, email, about } = payload;
-	const user = await User.findByPk(id);
+	const transaction = await sequelize.transaction();
 
-	if (!user) commonHelpers.customError('user does not exist', 404);
+	try {
+		const { name, email, about } = payload;
+		const user = await User.findByPk(id);
 
-	await User.update(
-		{ image: image, name: name, email: email, about: about },
-		{ where: { id: id } },
-	);
+		if (!user) commonHelpers.customError('user does not exist', 404);
+
+		const response = await User.update(
+			{ image: image, name: name, email: email, about: about },
+			{
+				where: { id: id },
+				returning: true,
+			},
+			{ transaction },
+		);
+		await transaction.commit();
+		return response;
+	} catch (error) {
+		await transaction.rollback();
+		console.log(error);
+	}
 }
 
 async function users(id, page = 0) {

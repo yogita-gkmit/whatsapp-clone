@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const otpGenerator = require('otp-generator');
 const { reddis } = require('../config/redis');
+const { sequelize } = require('../models');
 const { transporter, mailOptions } = require('../utils/email.util');
 const { validUser } = require('../helpers/auth.helper');
 const { addTokenToBlacklist } = require('../helpers/redis.helper');
@@ -42,7 +43,6 @@ async function sendOtp(payload) {
 			console.log('Email sent: ' + info.response);
 		}
 	});
-
 	return { message: 'otp sent successfully', otp };
 }
 
@@ -62,20 +62,34 @@ async function verifyOtp(payload) {
 	const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
 		expiresIn: '1h',
 	});
+
 	return token;
 }
 
 async function create(payload, image) {
-	const { name, about, email } = payload;
-	if (await validUser(email)) {
-		commonHelpers.customError('User already registered', 400);
+	const transaction = await sequelize.transaction();
+
+	try {
+		const { name, about, email } = payload;
+		if (await validUser(email)) {
+			commonHelpers.customError('User already registered', 400);
+		}
+		const response = await User.create(
+			{
+				name,
+				image,
+				email,
+				about,
+			},
+			{ transaction },
+		);
+		await transaction.commit();
+
+		return response;
+	} catch (error) {
+		await transaction.rollback();
+		console.log(error);
 	}
-	await User.create({
-		name,
-		image,
-		email,
-		about,
-	});
 }
 
 async function remove(token) {
