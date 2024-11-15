@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const otpGenerator = require('otp-generator');
 const { reddis } = require('../config/redis');
+const { sequelize } = require('../models');
 const { transporter, mailOptions } = require('../utils/email.util');
 const { validUser } = require('../helpers/auth.helper');
 const { addTokenToBlacklist } = require('../helpers/redis.helper');
@@ -23,7 +24,7 @@ async function generateOtp() {
 async function sendOtp(payload) {
 	const { email } = payload;
 	if (!(await validUser(email))) {
-		commonHelpers.customError('User is not registered', 404);
+		throw commonHelpers.customError('User is not registered', 404);
 	}
 	const otp = await generateOtp();
 	await reddis.set(email, otp, 'ex', 500);
@@ -37,12 +38,11 @@ async function sendOtp(payload) {
 	await transporter.sendMail(mailOptions, (error, info) => {
 		if (error) {
 			console.error(error);
-			commonHelpers.customError('Error sending mail', 400);
+			throw commonHelpers.customError('Error sending mail', 400);
 		} else {
 			console.log('Email sent: ' + info.response);
 		}
 	});
-
 	return { message: 'otp sent successfully', otp };
 }
 
@@ -62,30 +62,44 @@ async function verifyOtp(payload) {
 	const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
 		expiresIn: '1h',
 	});
+
 	return token;
 }
 
 async function create(payload, image) {
-	const { name, about, email } = payload;
-	if (await validUser(email)) {
-		commonHelpers.customError('User already registered', 400);
+	const transaction = await sequelize.transaction();
+
+	try {
+		const { name, about, email } = payload;
+		if (await validUser(email)) {
+			throw commonHelpers.customError('User already registered', 400);
+		}
+		const response = await User.create(
+			{
+				name,
+				image,
+				email,
+				about,
+			},
+			{ transaction },
+		);
+		await transaction.commit();
+
+		return response;
+	} catch (error) {
+		await transaction.rollback();
+		throw error;
 	}
-	await User.create({
-		name,
-		image,
-		email,
-		about,
-	});
 }
 
 async function remove(token) {
 	if (!token) {
-		commonHelpers.customError('Token is required for logout', 401);
+		throw commonHelpers.customError('Token is required for logout', 401);
 	}
 	try {
 		const decodedToken = jwt.decode(token);
 		if (!decodedToken) {
-			commonHelpers.customError('Invalid token', 401);
+			throw commonHelpers.customError('Invalid token', 401);
 		}
 		const expiresIn = 3600;
 		await addTokenToBlacklist(token, expiresIn);
@@ -93,7 +107,7 @@ async function remove(token) {
 		return { message: 'Logged out successfully' };
 	} catch (error) {
 		console.log(error);
-		commonHelpers.customError('Logout failed', 400);
+		throw commonHelpers.customError('Logout failed', 400);
 	}
 }
 

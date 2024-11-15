@@ -2,7 +2,7 @@
 function customError(message, statusCode = 400) {
   const err = new Error(message);
   err.statusCode = statusCode;
-  throw err;
+  return err;
 }
 
 module.exports = { customError };

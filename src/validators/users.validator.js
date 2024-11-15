@@ -1,9 +1,12 @@
-const joi = require('joi');
+const Joi = require('joi');
 
-const editProfileSchema = joi.object({
-	name: joi.string(),
-	about: joi.string(),
-	email: joi.string().email(),
+const editProfileSchema = Joi.object({
+	name: Joi.string().required(),
+	about: Joi.string().required(),
+	email: Joi.string().email().required(),
 });
 
-module.exports = { editProfileSchema };
+const queryPageSchema = Joi.object({
+	page: Joi.number().integer().optional(),
+});
+module.exports = { editProfileSchema, queryPageSchema };
