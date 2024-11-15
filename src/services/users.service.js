@@ -62,12 +62,14 @@ async function users(id, page = 0) {
 	return allUsers;
 }
 
-async function inbox(id, loggedInId) {
+async function inbox(id, loggedInId, page = 0) {
 	const user = await User.findByPk(id);
 	if (!user) commonHelpers.customError('user does not exist', 404);
 	if (id !== loggedInId) {
 		commonHelpers.customError('Invalid user', 400);
 	}
+	const limit = 10;
+	const offset = limit * page;
 
 	// const userChat = await UserChat.findAll({ where: { user_id: id } });
 	// const chatIds = userChat.map(item => item.chat_id);
@@ -114,9 +116,12 @@ async function inbox(id, loggedInId) {
 	WHERE
 	    uc.user_id = :id
 	GROUP BY
-	    c.id, uc.user_id, lm.message, lm.media, lm.created_at;`,
+	    c.id, uc.user_id, lm.message, lm.media, lm.created_at
+	ORDER BY last_message_created_at DESC
+	OFFSET :offset
+	LIMIT :limit;`,
 		{
-			replacements: { id },
+			replacements: { id, offset, limit },
 		},
 	);
 

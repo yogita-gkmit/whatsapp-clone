@@ -88,9 +88,10 @@ async function editSpecificProfile(req, res) {
 async function inbox(req, res) {
 	try {
 		const { id } = req.params;
+		const { page } = req.query;
 		const loggedInId = req.user.id;
 
-		const response = await usersService.inbox(id, loggedInId);
+		const response = await usersService.inbox(id, loggedInId, page);
 		res.status(200).json({
 			success: true,
 			message: response,
