@@ -472,25 +472,19 @@ async function displayMessages(chatId, id, page = 0) {
 		throw commonHelpers.customError('chat does not exist', 404);
 	}
 
-	const usersChatIds = await UserChat.findAll({ where: { chat_id: chatId } });
-
-	let flag = false;
-	usersChatIds.forEach(userId => {
-		if (userId.user_id === id) {
-			flag = true;
-		}
+	const user = await UserChat.findOne({
+		where: { chat_id: chatId, user_id: id },
 	});
 
-	if (!flag) {
+	if (!user) {
 		throw commonHelpers.customError('user can not access this chat', 403);
 	}
 
-	const limit = 1;
+	const limit = 10;
 	const offset = limit * page;
 
 	const message = await Message.findAll({
 		where: { chat_id: chatId },
-		user_id: { [Op.in]: usersChatIds },
 		offset: offset,
 		limit: limit,
 	});
