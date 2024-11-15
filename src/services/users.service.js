@@ -6,7 +6,7 @@ const commonHelpers = require('../helpers/common.helper');
 
 async function profile(id) {
 	const user = await User.findByPk(id);
-	if (!user) commonHelpers.customError('User Not Found', 404);
+	if (!user) throw commonHelpers.customError('User Not Found', 404);
 
 	return {
 		user: {
@@ -28,7 +28,7 @@ async function editProfile(id, image, payload) {
 		const { name, email, about } = payload;
 		const user = await User.findByPk(id);
 
-		if (!user) commonHelpers.customError('user does not exist', 404);
+		if (!user) throw commonHelpers.customError('user does not exist', 404);
 
 		const response = await User.update(
 			{ image: image, name: name, email: email, about: about },
@@ -48,13 +48,14 @@ async function editProfile(id, image, payload) {
 
 async function users(id, page = 0) {
 	const user = await User.findByPk(id);
-	if (!user) commonHelpers.customError('user does not exist', 404);
+	if (!user) throw commonHelpers.customError('user does not exist', 404);
 
 	const limit = 10;
 	const offset = limit * page;
 
 	const allUsers = await User.findAll({
 		where: { id: { [Op.not]: id } },
+		attributes: { exclude: ['email'] },
 		offset: offset,
 		limit: limit,
 	});
@@ -64,9 +65,9 @@ async function users(id, page = 0) {
 
 async function inbox(id, loggedInId, page = 0) {
 	const user = await User.findByPk(id);
-	if (!user) commonHelpers.customError('user does not exist', 404);
+	if (!user) throw commonHelpers.customError('user does not exist', 404);
 	if (id !== loggedInId) {
-		commonHelpers.customError('Invalid user', 400);
+		throw commonHelpers.customError('Invalid user', 400);
 	}
 	const limit = 10;
 	const offset = limit * page;
