@@ -88,7 +88,7 @@ async function create(payload, image) {
 		return response;
 	} catch (error) {
 		await transaction.rollback();
-		console.log(error);
+		throw error;
 	}
 }
 
@@ -106,8 +106,7 @@ async function remove(token) {
 
 		return { message: 'Logged out successfully' };
 	} catch (error) {
-		console.log(error);
-		commonHelpers.customError('Logout failed', 400);
+		throw commonHelpers.customError('Logout failed', 400);
 	}
 }
 

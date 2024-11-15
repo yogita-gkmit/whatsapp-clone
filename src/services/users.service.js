@@ -42,7 +42,7 @@ async function editProfile(id, image, payload) {
 		return response;
 	} catch (error) {
 		await transaction.rollback();
-		console.log(error);
+		throw error;
 	}
 }
 
