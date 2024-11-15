@@ -99,6 +99,7 @@ router.delete(
 router.get(
 	'/:chatId/messages',
 	authMiddleware,
+	validate(chatValidator.chatIdParamSchema, true),
 	chatsController.displayMessages,
 );
 module.exports = router;

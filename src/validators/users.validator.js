@@ -9,4 +9,7 @@ const editProfileSchema = Joi.object({
 const queryPageSchema = Joi.object({
 	page: Joi.number().integer().optional(),
 });
-module.exports = { editProfileSchema, queryPageSchema };
+const idParamSchema = Joi.object({
+	id: Joi.string().uuid().required(),
+});
+module.exports = { editProfileSchema, queryPageSchema, idParamSchema };
