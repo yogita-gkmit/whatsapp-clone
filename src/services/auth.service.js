@@ -24,7 +24,7 @@ async function generateOtp() {
 async function sendOtp(payload) {
 	const { email } = payload;
 	if (!(await validUser(email))) {
-		commonHelpers.customError('User is not registered', 404);
+		throw commonHelpers.customError('User is not registered', 404);
 	}
 	const otp = await generateOtp();
 	await reddis.set(email, otp, 'ex', 500);
@@ -38,7 +38,7 @@ async function sendOtp(payload) {
 	await transporter.sendMail(mailOptions, (error, info) => {
 		if (error) {
 			console.error(error);
-			commonHelpers.customError('Error sending mail', 400);
+			throw commonHelpers.customError('Error sending mail', 400);
 		} else {
 			console.log('Email sent: ' + info.response);
 		}
@@ -72,7 +72,7 @@ async function create(payload, image) {
 	try {
 		const { name, about, email } = payload;
 		if (await validUser(email)) {
-			commonHelpers.customError('User already registered', 400);
+			throw commonHelpers.customError('User already registered', 400);
 		}
 		const response = await User.create(
 			{
@@ -94,18 +94,19 @@ async function create(payload, image) {
 
 async function remove(token) {
 	if (!token) {
-		commonHelpers.customError('Token is required for logout', 401);
+		throw commonHelpers.customError('Token is required for logout', 401);
 	}
 	try {
 		const decodedToken = jwt.decode(token);
 		if (!decodedToken) {
-			commonHelpers.customError('Invalid token', 401);
+			throw commonHelpers.customError('Invalid token', 401);
 		}
 		const expiresIn = 3600;
 		await addTokenToBlacklist(token, expiresIn);
 
 		return { message: 'Logged out successfully' };
 	} catch (error) {
+		console.log(error);
 		throw commonHelpers.customError('Logout failed', 400);
 	}
 }
