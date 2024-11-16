@@ -18,7 +18,9 @@ async function createSingle(payload, loggedInId) {
 		const { type, user_ids: userIds } = payload;
 
 		const userDetails = await User.findByPk(userIds[0]);
-
+		if (!userDetails) {
+			throw commonHelpers.customError('User does not found', 404);
+		}
 		const name = userDetails.name;
 		const image = userDetails.image;
 		const description = userDetails.about;
