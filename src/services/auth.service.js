@@ -27,7 +27,7 @@ async function sendOtp(payload) {
 		throw commonHelpers.customError('User is not registered', 404);
 	}
 	const otp = await generateOtp();
-	await reddis.set(email, otp, 'ex', 500);
+	await reddis.set(email, otp, 'ex', 300);
 
 	const mailOptions = {
 		from: process.env.MAIL_USER,
@@ -60,7 +60,7 @@ async function verifyOtp(payload) {
 	}
 	reddis.del(email);
 	const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
-		expiresIn: '1h',
+		expiresIn: '170h',
 	});
 
 	return token;
