@@ -52,65 +52,68 @@ describe('Auth Service Tests', () => {
 
       const result = await authService.sendOtp(payload);
 
-      expect(result).toEqual({ message: 'otp sent successfully', otp: mockOtp });
+      expect(result).toEqual({
+        message: 'otp sent successfully',
+        otp: mockOtp,
+      });
       expect(reddis.set).toHaveBeenCalledWith(mockEmail, mockOtp, 'ex', 300);
       expect(transporter.sendMail).toHaveBeenCalled();
     });
 
     it('should throw error if user is not registered', async () => {
       const payload = { email: mockEmail };
-  
-      validUser.mockResolvedValue(false); // Simulate user not registered
-  
-      await commonHelpers.customError('User is not registered',404);
+
+      validUser.mockResolvedValue(false);
+
+      await commonHelpers.customError('User is not registered', 404);
     });
 
     it('should handle email sending error', async () => {
       const payload = { email: mockEmail };
-  
+
       validUser.mockResolvedValue(true);
       otpGenerator.generate.mockReturnValue(mockOtp);
       reddis.set.mockResolvedValue(true);
-  
+
       transporter.sendMail.mockImplementation((mailOptions, callback) => {
-        callback(new Error('Error sending mail'), null); // Simulate email sending error
+        callback(new Error('Error sending mail'), null);
       });
-  
-      await commonHelpers.customError('Error sending mail',400);
+
+      await commonHelpers.customError('Error sending mail', 400);
     });
   });
 
   describe('verifyOtp', () => {
     it('should verify OTP successfully and return a token', async () => {
       const payload = { email: mockEmail, otp: mockOtp };
-  
+
       validUser.mockResolvedValue(true);
       User.findOne.mockResolvedValue(mockUser);
       reddis.get.mockResolvedValue(mockOtp);
       jwt.sign.mockReturnValue('mock-jwt-token');
-  
+
       const result = await authService.verifyOtp(payload);
-  
+
       expect(result).toBe('mock-jwt-token');
-      expect(reddis.del).toHaveBeenCalledWith(mockEmail); // Ensure OTP is deleted from Redis
+      expect(reddis.del).toHaveBeenCalledWith(mockEmail);
     });
 
     it('should throw error if OTP does not match', async () => {
       const payload = { email: mockEmail, otp: 'wrongOtp' };
-  
+
       validUser.mockResolvedValue(true);
       User.findOne.mockResolvedValue(mockUser);
-      reddis.get.mockResolvedValue('123456'); // Mock Redis to return a different OTP
-  
+      reddis.get.mockResolvedValue('123456');
+
       await commonHelpers.customError('OTP did not match', 400);
     });
 
     it('should throw error if user is not registered', async () => {
       const payload = { email: mockEmail, otp: mockOtp };
-  
-      validUser.mockResolvedValue(false); // Simulate user not found
-  
-      await commonHelpers.customError('User is not registered',404);
+
+      validUser.mockResolvedValue(false);
+
+      await commonHelpers.customError('User is not registered', 404);
     });
   });
 
@@ -121,16 +124,16 @@ describe('Auth Service Tests', () => {
         email: mockEmail,
         about: 'Test User Profile',
       };
-  
+
       const image = 'image-path.jpg';
-  
-      validUser.mockResolvedValue(false); // User doesn't exist
-  
+
+      validUser.mockResolvedValue(false);
+
       sequelize.transaction.mockResolvedValue(mockTransaction);
       User.create.mockResolvedValue(mockUser);
-  
+
       const result = await authService.create(payload, image);
-  
+
       expect(result).toEqual(mockUser);
       expect(User.create).toHaveBeenCalledWith(
         {
@@ -139,7 +142,7 @@ describe('Auth Service Tests', () => {
           email: mockEmail,
           about: 'Test User Profile',
         },
-        { transaction: mockTransaction }
+        { transaction: mockTransaction },
       );
       expect(mockTransaction.commit).toHaveBeenCalled();
     });
@@ -150,52 +153,36 @@ describe('Auth Service Tests', () => {
         email: mockEmail,
         about: 'Test User Profile',
       };
-  
-      validUser.mockResolvedValue(true); // User already exists
-  
-      await commonHelpers.customError('User already registered',400);
-    });
 
-    // it('should handle database errors when creating a user', async () => {
-    //   const payload = {
-    //     name: 'Test User',
-    //     email: mockEmail,
-    //     about: 'Test User Profile',
-    //   };
-  
-    //   validUser.mockResolvedValue(false); // User doesn't exist
-  
-    //   sequelize.transaction.mockResolvedValue(mockTransaction);
-    //   User.create.mockRejectedValue(new Error('Database error'));
-  
-    //   await expect(authService.create(payload, null)).rejects.toThrowError(new Error('Database error'));
-    //   expect(mockTransaction.rollback).toHaveBeenCalled();
-    // });
+      validUser.mockResolvedValue(true);
+
+      await commonHelpers.customError('User already registered', 400);
+    });
   });
 
   describe('remove', () => {
     it('should log out user successfully', async () => {
       const token = 'valid-jwt-token';
-  
-      jwt.decode.mockReturnValue({ id: 1 }); // Mock JWT token decoding
+
+      jwt.decode.mockReturnValue({ id: 1 });
       addTokenToBlacklist.mockResolvedValue(true);
-  
+
       const result = await authService.remove(token);
-  
+
       expect(result).toEqual({ message: 'Logged out successfully' });
-      expect(addTokenToBlacklist).toHaveBeenCalledWith(token, 3600); // Token expiration set to 1 hour
+      expect(addTokenToBlacklist).toHaveBeenCalledWith(token, 3600);
     });
 
     it('should throw error if no token is provided', async () => {
-      await commonHelpers.customError('Token is required for logout',401);
+      await commonHelpers.customError('Token is required for logout', 401);
     });
 
     it('should throw error if token is invalid', async () => {
       const token = 'invalid-jwt-token';
-  
-      jwt.decode.mockReturnValue(null); // Simulate invalid token
-  
-      await commonHelpers.customError('Invalid token',401);
+
+      jwt.decode.mockReturnValue(null);
+
+      await commonHelpers.customError('Invalid token', 401);
     });
   });
 });

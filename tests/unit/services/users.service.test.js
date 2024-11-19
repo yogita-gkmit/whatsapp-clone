@@ -1,5 +1,6 @@
 const { User, UserChat, Message } = require('../../../src/models');
 const { sequelize } = require('../../../src/models');
+const { Op } = require('sequelize');
 const commonHelpers = require('../../../src/helpers/common.helper');
 const chatService = require('../../../src/services/users.service');
 
@@ -49,13 +50,17 @@ describe('User Service Tests', () => {
     it('should throw error if user does not exist', async () => {
       User.findByPk.mockResolvedValue(null);
 
-      await commonHelpers.customError('User Not Found',404);
+      await commonHelpers.customError('User Not Found', 404);
     });
   });
 
   describe('editProfile', () => {
     it('should edit user profile successfully', async () => {
-      const payload = { name: 'Updated Name', email: 'updated@example.com', about: 'Updated about' };
+      const payload = {
+        name: 'Updated Name',
+        email: 'updated@example.com',
+        about: 'Updated about',
+      };
       const image = 'updated-image.jpg';
       const user = { ...mockUser, ...payload };
 
@@ -67,30 +72,47 @@ describe('User Service Tests', () => {
 
       expect(result[1][0]).toEqual(user);
       expect(User.update).toHaveBeenCalledWith(
-        { image, name: payload.name, email: payload.email, about: payload.about },
+        {
+          image,
+          name: payload.name,
+          email: payload.email,
+          about: payload.about,
+        },
         {
           where: { id: 1 },
           returning: true,
+        },
+        {
           transaction: mockTransaction,
-        }
+        },
       );
       expect(mockTransaction.commit).toHaveBeenCalled();
     });
 
     it('should throw error if user does not exist', async () => {
-      const payload = { name: 'Updated Name', email: 'updated@example.com', about: 'Updated about' };
+      const payload = {
+        name: 'Updated Name',
+        email: 'updated@example.com',
+        about: 'Updated about',
+      };
       User.findByPk.mockResolvedValue(null);
 
-      await commonHelpers.customError('user does not exist',404);
+      await commonHelpers.customError('user does not exist', 404);
     });
 
     it('should handle transaction rollback in case of error', async () => {
-      const payload = { name: 'Updated Name', email: 'updated@example.com', about: 'Updated about' };
+      const payload = {
+        name: 'Updated Name',
+        email: 'updated@example.com',
+        about: 'Updated about',
+      };
       User.findByPk.mockResolvedValue(mockUser);
       User.update.mockRejectedValue(new Error('Database error'));
       sequelize.transaction.mockResolvedValue(mockTransaction);
 
-      await expect(chatService.editProfile(1, 'image.jpg', payload)).rejects.toThrow('Database error');
+      await expect(
+        chatService.editProfile(1, 'image.jpg', payload),
+      ).rejects.toThrow('Database error');
       expect(mockTransaction.rollback).toHaveBeenCalled();
     });
   });
@@ -114,7 +136,7 @@ describe('User Service Tests', () => {
     it('should throw error if user does not exist', async () => {
       User.findByPk.mockResolvedValue(null);
 
-      await commonHelpers.customError('user does not exist',404);
+      await commonHelpers.customError('user does not exist', 404);
     });
   });
 
@@ -122,7 +144,13 @@ describe('User Service Tests', () => {
     it('should return the inbox with chats and last message', async () => {
       const mockUserChat = { chat_id: 1, user_id: 1 };
       const mockChats = [
-        { id: 1, name: 'Chat 1', description: 'Description', image: 'chat-image.jpg', type: 'group' },
+        {
+          id: 1,
+          name: 'Chat 1',
+          description: 'Description',
+          image: 'chat-image.jpg',
+          type: 'group',
+        },
       ];
 
       const mockLastMessage = [
@@ -160,20 +188,20 @@ describe('User Service Tests', () => {
         expect.any(String),
         expect.objectContaining({
           replacements: { id: 1, offset: 0, limit: 10 },
-        })
+        }),
       );
     });
 
     it('should throw error if user does not exist', async () => {
       User.findByPk.mockResolvedValue(null);
 
-      await commonHelpers.customError('user does not exist',404);
+      await commonHelpers.customError('user does not exist', 404);
     });
 
     it('should throw error if logged-in user does not match the requested user', async () => {
       User.findByPk.mockResolvedValue(mockUser);
 
-      await commonHelpers.customError('Invalid user',400);
+      await commonHelpers.customError('Invalid user', 400);
     });
   });
 });

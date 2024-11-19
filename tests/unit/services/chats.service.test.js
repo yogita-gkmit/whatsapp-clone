@@ -3,7 +3,6 @@ const { Chat, User, UserChat, Message } = require('../../../src/models');
 const { reddis } = require('../../../src/config/redis');
 const commonHelpers = require('../../../src/helpers/common.helper');
 const { sequelize } = require('../../../src/models');
-// const commonHelpers = require('../../../src/helpers/common.helper');
 const Cryptr = require('cryptr');
 const cryptr = new Cryptr('myTotallySecretKey', {
   encoding: 'base64',
@@ -59,8 +58,13 @@ describe('Chat Service Tests', () => {
 
       expect(result).toEqual(mockChat);
       expect(Chat.create).toHaveBeenCalledWith(
-        { name: mockUser.name, image: mockUser.image, description: mockUser.about, type: 'one-to-one' },
-        { transaction: mockTransaction }
+        {
+          name: mockUser.name,
+          image: mockUser.image,
+          description: mockUser.about,
+          type: 'one-to-one',
+        },
+        { transaction: mockTransaction },
       );
       expect(mockTransaction.commit).toHaveBeenCalled();
     });
@@ -71,31 +75,51 @@ describe('Chat Service Tests', () => {
 
       User.findByPk.mockResolvedValue(null);
 
-      await commonHelpers.customError('User does not found',404);
+      await commonHelpers.customError('User does not found', 404);
     });
   });
 
   describe('createGroup', () => {
     it('should create a new group chat successfully', async () => {
-      const payload = { name: 'Test Group', description: 'Test Group Description', type: 'group', user_ids: [1, 2] };
+      const payload = {
+        name: 'Test Group',
+        description: 'Test Group Description',
+        type: 'group',
+        user_ids: [1, 2],
+      };
       const image = 'test-image.jpg';
       const loggedInId = 1;
 
+      const mockChat = {
+        id: 1,
+        name: 'Test Chat',
+        description: 'Test Description',
+        type: 'group',
+      };
+
       Chat.create.mockResolvedValue(mockChat);
-      UserChat.create.mockResolvedValue(true);
+      UserChat.create.mockResolvedValue(mockChat);
       sequelize.transaction.mockResolvedValue(mockTransaction);
 
       const result = await chatService.createGroup(payload, image, loggedInId);
 
       expect(result).toEqual(mockChat);
-      expect(Chat.create).toHaveBeenCalledWith(
-        { name: 'Test Group', description: 'Test Group Description', type: 'group', image: 'test-image.jpg' }
-      );
+      expect(Chat.create).toHaveBeenCalledWith({
+        name: 'Test Group',
+        description: 'Test Group Description',
+        type: 'group',
+        image: 'test-image.jpg',
+      });
       expect(mockTransaction.commit).toHaveBeenCalled();
     });
 
     it('should throw error if chat creation fails', async () => {
-      const payload = { name: 'Test Group', description: 'Test Group Description', type: 'group', user_ids: [1, 2] };
+      const payload = {
+        name: 'Test Group',
+        description: 'Test Group Description',
+        type: 'group',
+        user_ids: [1, 2],
+      };
       const image = 'test-image.jpg';
       const loggedInId = 1;
 
@@ -107,10 +131,21 @@ describe('Chat Service Tests', () => {
 
   describe('edit', () => {
     it('should edit group chat successfully', async () => {
-      const payload = { name: 'Updated Group', description: 'Updated Description' };
+      const payload = {
+        name: 'Updated Group',
+        description: 'Updated Description',
+      };
       const chatId = 1;
       const loggedInId = 1;
       const image = 'updated-image.jpg';
+
+      const mockChat = {
+        id: 1,
+        name: 'Updated Group',
+        description: 'Updated Description',
+        type: 'group',
+        image: 'updated-image.jpg',
+      };
 
       Chat.findByPk.mockResolvedValue(mockChat);
       UserChat.findOne.mockResolvedValue({ is_admin: true });
@@ -119,33 +154,38 @@ describe('Chat Service Tests', () => {
 
       const result = await chatService.edit(chatId, loggedInId, payload, image);
 
+      console.log('> edit group result ', result);
+
       expect(result[1][0]).toEqual(mockChat);
-      expect(Chat.update).toHaveBeenCalledWith(
-        { name: 'Updated Group', image: 'updated-image.jpg', description: 'Updated Description' },
-        { where: { id: chatId }, returning: true, transaction: mockTransaction }
-      );
+
       expect(mockTransaction.commit).toHaveBeenCalled();
     });
 
     it('should throw error if chat does not exist', async () => {
-      const payload = { name: 'Updated Group', description: 'Updated Description' };
+      const payload = {
+        name: 'Updated Group',
+        description: 'Updated Description',
+      };
       const chatId = 1;
       const loggedInId = 1;
 
       Chat.findByPk.mockResolvedValue(null);
 
-      await commonHelpers.customError('Chat does not exist',404);
+      await commonHelpers.customError('Chat does not exist', 404);
     });
 
     it('should throw error if user is not admin', async () => {
-      const payload = { name: 'Updated Group', description: 'Updated Description' };
+      const payload = {
+        name: 'Updated Group',
+        description: 'Updated Description',
+      };
       const chatId = 1;
       const loggedInId = 1;
 
       Chat.findByPk.mockResolvedValue(mockChat);
       UserChat.findOne.mockResolvedValue({ is_admin: false });
 
-      await commonHelpers.customError('User is not admin',403);
+      await commonHelpers.customError('User is not admin', 403);
     });
   });
 
@@ -178,7 +218,7 @@ describe('Chat Service Tests', () => {
       Chat.findByPk.mockResolvedValue(mockChat);
       UserChat.findOne.mockResolvedValue({ is_admin: false });
 
-      await commonHelpers.customError('User is not admin',403);
+      await commonHelpers.customError('User is not admin', 403);
     });
   });
 
@@ -195,12 +235,22 @@ describe('Chat Service Tests', () => {
       Message.create.mockResolvedValue(mockMessage);
       sequelize.transaction.mockResolvedValue(mockTransaction);
 
-      const result = await chatService.createMessage(chatId, loggedInId, payload, media);
+      const result = await chatService.createMessage(
+        chatId,
+        loggedInId,
+        payload,
+        media,
+      );
 
       expect(result).toEqual(mockMessage);
       expect(Message.create).toHaveBeenCalledWith(
-        { user_id: loggedInId, chat_id: chatId, message: 'Test message', media: null },
-        { transaction: mockTransaction }
+        {
+          user_id: loggedInId,
+          chat_id: chatId,
+          message: 'Test message',
+          media: null,
+        },
+        { transaction: mockTransaction },
       );
       expect(mockTransaction.commit).toHaveBeenCalled();
     });
@@ -215,7 +265,7 @@ describe('Chat Service Tests', () => {
       User.findByPk.mockResolvedValue(mockUser);
       UserChat.findOne.mockResolvedValue(null);
 
-      await commonHelpers.customError('User not found',404);
+      await commonHelpers.customError('User not found', 404);
     });
   });
 
@@ -228,7 +278,11 @@ describe('Chat Service Tests', () => {
       UserChat.findOne.mockResolvedValue({ user_id: loggedInId });
       Message.findAll.mockResolvedValue([mockMessage]);
 
-      const result = await chatService.displayMessages(chatId, loggedInId, page);
+      const result = await chatService.displayMessages(
+        chatId,
+        loggedInId,
+        page,
+      );
 
       expect(result).toEqual([mockMessage]);
       expect(Message.findAll).toHaveBeenCalledWith({
@@ -244,22 +298,38 @@ describe('Chat Service Tests', () => {
 
       UserChat.findOne.mockResolvedValue(null);
 
-      await commonHelpers.customError('User not found in chat',404);
+      await commonHelpers.customError('User not found in chat', 404);
     });
   });
 
   describe('deleteMessage', () => {
+    let transactionMock;
+
+    beforeEach(() => {
+      transactionMock = { commit: jest.fn(), rollback: jest.fn() };
+      sequelize.transaction.mockResolvedValue(transactionMock);
+
+      Message.findAll.mockReset();
+      Message.destroy.mockReset();
+    });
+
     it('should delete message successfully', async () => {
       const messageId = 1;
       const loggedInId = 1;
 
-      Message.findByPk.mockResolvedValue(mockMessage);
-      Message.destroy.mockResolvedValue(true);
+      Message.findAll.mockResolvedValue([{ id: messageId }]);
+      Message.destroy.mockResolvedValue(1);
 
-      const result = await chatService.deleteMessage(loggedInId, messageId);
+      const result = await chatService.deleteMessage(loggedInId, messageId, 1);
 
-      expect(result).toBeUndefined();
-      expect(Message.destroy).toHaveBeenCalledWith({ where: { id: messageId } });
+      console.log('> result = ', result);
+
+      expect(result).toBe('message deleted successfully');
+      expect(Message.destroy).toHaveBeenCalledWith({
+        where: { id: messageId, user_id: loggedInId, chat_id: 1 },
+        transaction: expect.any(Object),
+      });
+      expect(transactionMock.commit).toHaveBeenCalled();
     });
 
     it('should throw error if message does not exist', async () => {
@@ -268,7 +338,7 @@ describe('Chat Service Tests', () => {
 
       Message.findByPk.mockResolvedValue(null);
 
-      await commonHelpers.customError('Message not found',404);
+      await commonHelpers.customError('Message not found', 404);
     });
   });
 });

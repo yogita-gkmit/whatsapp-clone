@@ -147,6 +147,8 @@ describe('Auth Controller Tests', () => {
 
       await authController.logout(req, mockResponse);
 
+      expect(authServices.remove).toHaveBeenCalledWith(token);
+
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith({
         message: 'Logged out successfully',
@@ -154,11 +156,20 @@ describe('Auth Controller Tests', () => {
     });
 
     it('should handle error for missing token in logout', async () => {
-      const req = mockRequest({}, {}, {}); // No token in the headers
+      let token;
+      const req = mockRequest({}, {}, {});
+      req.headers = { authorization: `${token}` };
+
+      const err = new Error('Unauthorized');
+      err.statusCode = 401;
+
+      authServices.remove.mockRejectedValue(err);
 
       await authController.logout(req, mockResponse);
 
-      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(authServices.remove).toHaveBeenCalled();
+
+      expect(mockResponse.status).toHaveBeenCalledWith(401);
       expect(mockResponse.json).toHaveBeenCalledWith({
         message: 'Unauthorized',
       });
@@ -169,12 +180,16 @@ describe('Auth Controller Tests', () => {
       const req = mockRequest({}, {}, {});
       req.headers = { authorization: `${token}` };
 
-      // const error = new Error('Invalid token');
-      // authServices.remove.mockRejectedValue(error);
+      const err = new Error('Unauthorized');
+      err.statusCode = 401;
+
+      authServices.remove.mockRejectedValue(err);
 
       await authController.logout(req, mockResponse);
 
-      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(authServices.remove).toHaveBeenCalledWith(token);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(401);
       expect(mockResponse.json).toHaveBeenCalledWith({
         message: 'Unauthorized',
       });
