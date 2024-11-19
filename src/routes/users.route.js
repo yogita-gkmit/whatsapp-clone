@@ -4,7 +4,7 @@ const { authMiddleware } = require('../middlewares/auth.middleware');
 const { upload } = require('../middlewares/multer.middleware');
 
 const { validate } = require('../middlewares/validators.middleware');
-const { editProfileSchema } = require('../validators/users.validator');
+const userValidator = require('../validators/users.validator');
 
 const usersController = require('../controllers/users.controller');
 
@@ -16,17 +16,23 @@ router.put(
 	'/me',
 	authMiddleware,
 	upload.single('image'),
-	validate(editProfileSchema),
+	validate(userValidator.editProfileSchema),
 	usersController.editMyProfile,
 );
 router.put(
 	'/:id',
-	validate(editProfileSchema),
+	validate(userValidator.editProfileSchema),
 	upload.single('image'),
 	usersController.editSpecificProfile,
 );
 
 // TO INBOX:
-router.get('/:id/chats', authMiddleware, usersController.inbox);
+router.get(
+	'/:id/chats',
+	authMiddleware,
+	validate(userValidator.idParamSchema, true),
+	validate(userValidator.queryPageSchema, false, true),
+	usersController.inbox,
+);
 
 module.exports = router;
