@@ -229,7 +229,7 @@ async function displayMessages(req, res, next) {
 			page,
 			filter,
 		);
-		// res.status(200).json({ message: response });
+
 		res.statusCode = 200;
 		res.data = response;
 		next();
