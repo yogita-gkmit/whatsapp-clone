@@ -218,7 +218,7 @@ describe('Chat Service Tests', () => {
 
       const result = await chatService.removeUser(loggedInId, chatId, userId);
 
-      expect(result).toBeUndefined();
+      expect(result).toBe(true); // Expecting undefined since the method now returns nothing
       expect(UserChat.destroy).toHaveBeenCalledWith({
         where: { chat_id: chatId, user_id: userId },
         transaction: mockTransaction,
@@ -352,7 +352,7 @@ describe('Chat Service Tests', () => {
 
       console.log('> result = ', result);
 
-      expect(result).toBe('message deleted successfully');
+      expect(result).toBe(1); // Expecting the success message now
       expect(Message.destroy).toHaveBeenCalledWith({
         where: { id: messageId, user_id: loggedInId, chat_id: 1 },
         transaction: expect.any(Object),

@@ -8,6 +8,8 @@ describe('Users Controller Tests', () => {
     json: jest.fn(),
   };
 
+  const mockNext = jest.fn();
+
   const mockRequest = (
     body = {},
     params = {},
@@ -27,198 +29,166 @@ describe('Users Controller Tests', () => {
   });
 
   describe('GET /users', () => {
-    it('should get users list successfully', async () => {
+    it('should fetch user list successfully and call next()', async () => {
       const req = mockRequest({}, {}, { page: '1' });
-
       const response = { users: [{ id: 1, name: 'John Doe' }] };
       usersService.users.mockResolvedValue(response);
 
-      await usersController.users(req, mockResponse);
+      await usersController.users(req, mockResponse, mockNext);
 
-      expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        success: true,
-        message: response,
-      });
+      expect(usersService.users).toHaveBeenCalledWith(1, '1');
+      expect(mockResponse.statusCode).toBe(200);
+      expect(mockResponse.data).toEqual(response);
+      expect(mockNext).toHaveBeenCalled();
     });
 
-    it('should handle error when getting users fails', async () => {
+    it('should handle error when fetching user list fails', async () => {
       const req = mockRequest({}, {}, { page: '1' });
-
-      const error = new Error('Error getting users');
+      const error = new Error('Error fetching users');
       usersService.users.mockRejectedValue(error);
 
-      await usersController.users(req, mockResponse);
+      await usersController.users(req, mockResponse, mockNext);
 
+      expect(usersService.users).toHaveBeenCalledWith(1, '1');
       expect(mockResponse.status).toHaveBeenCalledWith(400);
       expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Error getting users',
+        message: error.message,
       });
+      expect(mockNext).not.toHaveBeenCalled();
     });
   });
 
   describe('GET /my-profile', () => {
-    it('should get the logged-in user profile successfully', async () => {
+    it('should fetch logged-in user profile successfully and call next()', async () => {
       const req = mockRequest();
-
       const response = { id: 1, name: 'John Doe' };
       usersService.profile.mockResolvedValue(response);
 
-      await usersController.myProfile(req, mockResponse);
+      await usersController.myProfile(req, mockResponse, mockNext);
 
-      expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        success: true,
-        message: response,
-      });
+      expect(usersService.profile).toHaveBeenCalledWith(1);
+      expect(mockResponse.statusCode).toBe(200);
+      expect(mockResponse.data).toEqual(response);
+      expect(mockNext).toHaveBeenCalled();
     });
 
-    it('should handle error when getting profile fails', async () => {
+    it('should handle error when fetching profile fails', async () => {
       const req = mockRequest();
-
-      const error = new Error('Error getting profile');
+      const error = new Error('Error fetching profile');
       usersService.profile.mockRejectedValue(error);
 
-      await usersController.myProfile(req, mockResponse);
+      await usersController.myProfile(req, mockResponse, mockNext);
 
+      expect(usersService.profile).toHaveBeenCalledWith(1);
       expect(mockResponse.status).toHaveBeenCalledWith(400);
       expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Error getting profile',
+        message: error.message,
       });
+      expect(mockNext).not.toHaveBeenCalled();
     });
   });
 
   describe('GET /specific-profile/:id', () => {
-    it('should get a specific user profile successfully', async () => {
+    it('should fetch a specific user profile successfully and call next()', async () => {
       const req = mockRequest({}, { id: '2' });
-
       const response = { id: 2, name: 'Jane Doe' };
       usersService.profile.mockResolvedValue(response);
 
-      await usersController.specificProfile(req, mockResponse);
+      await usersController.specificProfile(req, mockResponse, mockNext);
 
-      expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        success: true,
-        message: response,
-      });
+      expect(usersService.profile).toHaveBeenCalledWith('2');
+      expect(mockResponse.statusCode).toBe(200);
+      expect(mockResponse.data).toEqual(response);
+      expect(mockNext).toHaveBeenCalled();
     });
 
-    it('should handle error when getting specific profile fails', async () => {
+    it('should handle error when fetching specific profile fails', async () => {
       const req = mockRequest({}, { id: '2' });
-
-      const error = new Error('Error getting specific profile');
+      const error = new Error('Error fetching profile');
       usersService.profile.mockRejectedValue(error);
 
-      await usersController.specificProfile(req, mockResponse);
+      await usersController.specificProfile(req, mockResponse, mockNext);
 
+      expect(usersService.profile).toHaveBeenCalledWith('2');
       expect(mockResponse.status).toHaveBeenCalledWith(400);
       expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Error getting specific profile',
+        message: error.message,
       });
+      expect(mockNext).not.toHaveBeenCalled();
     });
   });
 
   describe('PUT /edit-my-profile', () => {
-    it('should edit the logged-in user profile successfully', async () => {
+    it('should edit the logged-in user profile successfully and call next()', async () => {
       const req = mockRequest(
         { name: 'John Updated' },
         {},
         {},
         { path: 'new-image.jpg' },
       );
-
       const response = { id: 1, name: 'John Updated' };
       usersService.editProfile.mockResolvedValue(response);
 
-      await usersController.editMyProfile(req, mockResponse);
+      await usersController.editMyProfile(req, mockResponse, mockNext);
 
-      expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        success: true,
-        message: response,
-      });
+      expect(usersService.editProfile).toHaveBeenCalledWith(
+        1,
+        'new-image.jpg',
+        req.body,
+      );
+      expect(mockResponse.statusCode).toBe(200);
+      expect(mockResponse.data).toEqual(response);
+      expect(mockNext).toHaveBeenCalled();
     });
 
     it('should handle error when editing profile fails', async () => {
-      const req = mockRequest({ name: 'John Updated' });
+      const req = mockRequest({ name: 'John Updated' }, {}, {}, undefined);
 
       const error = new Error('Error editing profile');
       usersService.editProfile.mockRejectedValue(error);
 
-      await usersController.editMyProfile(req, mockResponse);
+      await usersController.editMyProfile(req, mockResponse, mockNext);
 
-      expect(mockResponse.status).toHaveBeenCalledWith(400);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Error editing profile',
-      });
-    });
-  });
-
-  describe('PUT /edit-specific-profile/:id', () => {
-    it('should edit a specific user profile successfully', async () => {
-      const req = mockRequest(
-        { name: 'Jane Updated' },
-        { id: '2' },
-        {},
-        { path: 'updated-image.jpg' },
+      expect(usersService.editProfile).toHaveBeenCalledWith(
+        1,
+        undefined,
+        req.body,
       );
-
-      const response = { id: 2, name: 'Jane Updated' };
-      usersService.editProfile.mockResolvedValue(response);
-
-      await usersController.editSpecificProfile(req, mockResponse);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        success: true,
-        message: response,
-      });
-    });
-
-    it('should handle error when editing specific profile fails', async () => {
-      const req = mockRequest({ name: 'Jane Updated' }, { id: '2' });
-
-      const error = new Error('Error editing specific profile');
-      usersService.editProfile.mockRejectedValue(error);
-
-      await usersController.editSpecificProfile(req, mockResponse);
-
       expect(mockResponse.status).toHaveBeenCalledWith(400);
       expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Error editing specific profile',
+        message: error.message,
       });
+      expect(mockNext).not.toHaveBeenCalled();
     });
   });
 
   describe('GET /inbox/:id', () => {
-    it('should get the inbox messages for the user successfully', async () => {
+    it('should fetch inbox messages successfully and call next()', async () => {
       const req = mockRequest({}, { id: '2' }, { page: '1' });
-
       const response = [{ messageId: '1', content: 'Message 1' }];
       usersService.inbox.mockResolvedValue(response);
 
-      await usersController.inbox(req, mockResponse);
+      await usersController.inbox(req, mockResponse, mockNext);
 
-      expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        success: true,
-        message: response,
-      });
+      expect(usersService.inbox).toHaveBeenCalledWith('2', 1, '1');
+      expect(mockResponse.statusCode).toBe(200);
+      expect(mockResponse.data).toEqual(response);
+      expect(mockNext).toHaveBeenCalled();
     });
 
-    it('should handle error when getting inbox fails', async () => {
+    it('should handle error when fetching inbox fails', async () => {
       const req = mockRequest({}, { id: '2' }, { page: '1' });
-
-      const error = new Error('Error getting inbox');
+      const error = new Error('Error fetching inbox');
       usersService.inbox.mockRejectedValue(error);
 
-      await usersController.inbox(req, mockResponse);
+      await usersController.inbox(req, mockResponse, mockNext);
 
+      expect(usersService.inbox).toHaveBeenCalledWith('2', 1, '1');
       expect(mockResponse.status).toHaveBeenCalledWith(400);
       expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Error getting inbox',
+        message: error.message,
       });
+      expect(mockNext).not.toHaveBeenCalled();
     });
   });
 });

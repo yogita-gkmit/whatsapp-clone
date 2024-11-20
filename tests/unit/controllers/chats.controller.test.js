@@ -1,397 +1,415 @@
 const chatsController = require('../../../src/controllers/chats.controller');
 const chatsService = require('../../../src/services/chats.service');
+
 jest.mock('../../../src/services/chats.service');
 
-describe('Chats Controller Tests', () => {
-  const mockResponse = {
-    status: jest.fn().mockReturnThis(),
-    json: jest.fn(),
-  };
+describe('Chat Controller Tests', () => {
+  let req, res, next;
 
-  const mockRequest = (
-    body = {},
-    params = {},
-    query = {},
-    file = null,
-    user = { id: 1 },
-  ) => ({
-    body,
-    params,
-    query,
-    file,
-    user,
+  beforeEach(() => {
+    req = {
+      body: {},
+      file: null,
+      params: {},
+      query: {},
+      user: { id: 'user-id' },
+    };
+
+    res = {
+      statusCode: null,
+      data: null,
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    };
+
+    next = jest.fn();
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-
-  describe('POST /create-chat', () => {
+  describe('createChat', () => {
     it('should create a one-to-one chat successfully', async () => {
-      const payload = { type: 'one-to-one', name: 'Chat with John' };
-      const req = mockRequest(payload);
-      const response = { chatId: 1 };
+      req.body = { type: 'one-to-one', otherData: 'test' };
+      const mockResponse = { id: 'chat-id' };
+      chatsService.createSingle.mockResolvedValue(mockResponse);
 
-      chatsService.createSingle.mockResolvedValue(response);
+      await chatsController.createChat(req, res, next);
 
-      await chatsController.createChat(req, mockResponse);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(201);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'User has been successfully created',
-        response,
-      });
+      expect(chatsService.createSingle).toHaveBeenCalledWith(
+        req.body,
+        req.user.id,
+      );
+      expect(res.statusCode).toBe(201);
+      expect(res.data).toEqual(mockResponse);
+      expect(next).toHaveBeenCalled();
     });
 
     it('should create a group chat successfully', async () => {
-      const payload = { type: 'group', name: 'Group Chat' };
-      const req = mockRequest(payload, {}, {}, { path: 'image-path.jpg' });
-      const response = { chatId: 2 };
+      req.body = { type: 'group', otherData: 'test' };
+      req.file = { path: 'image-path' };
+      const mockResponse = { id: 'group-id' };
+      chatsService.createGroup.mockResolvedValue(mockResponse);
 
-      chatsService.createGroup.mockResolvedValue(response);
+      await chatsController.createChat(req, res, next);
 
-      await chatsController.createChat(req, mockResponse);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(201);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'User has been successfully created',
-        response,
-      });
-    });
-
-    it('should handle error when creating chat fails', async () => {
-      const payload = { type: 'one-to-one', name: 'Chat with John' };
-      const req = mockRequest(payload);
-
-      const error = new Error('Error creating chat');
-      chatsService.createSingle.mockRejectedValue(error);
-
-      await chatsController.createChat(req, mockResponse);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(400);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Error creating chat',
-      });
-    });
-  });
-
-  describe('GET /get-chat/:chatId', () => {
-    it('should fetch chat details successfully', async () => {
-      const req = mockRequest({}, { chatId: '1' });
-      const response = { chatId: 1, name: 'Chat with John' };
-
-      chatsService.find.mockResolvedValue(response);
-
-      await chatsController.getChat(req, mockResponse);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'successfully getting the chat',
-        response,
-      });
-    });
-
-    it('should handle error when fetching chat fails', async () => {
-      const req = mockRequest({}, { chatId: '1' });
-
-      const error = new Error('Chat not found');
-      chatsService.find.mockRejectedValue(error);
-
-      await chatsController.getChat(req, mockResponse);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(400);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Chat not found',
-      });
-    });
-  });
-
-  describe('PUT /edit-chat/:chatId', () => {
-    it('should edit a group chat successfully', async () => {
-      const payload = { name: 'Updated Group Chat' };
-      const req = mockRequest(
-        payload,
-        { chatId: '1' },
-        {},
-        { path: 'image-path.jpg' },
+      expect(chatsService.createGroup).toHaveBeenCalledWith(
+        req.body,
+        'image-path',
+        req.user.id,
       );
-
-      chatsService.edit.mockResolvedValue(true);
-
-      await chatsController.editChat(req, mockResponse);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(202);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'successfully edited the group chat',
-      });
+      expect(res.statusCode).toBe(201);
+      expect(res.data).toEqual(mockResponse);
+      expect(next).toHaveBeenCalled();
     });
 
-    it('should handle error when editing chat fails', async () => {
-      const payload = { name: 'Updated Group Chat' };
-      const req = mockRequest(payload, { chatId: '1' });
+    it('should handle errors during chat creation', async () => {
+      req.body = { type: 'group' };
+      const mockError = new Error('Chat creation failed');
+      chatsService.createGroup.mockRejectedValue(mockError);
 
-      const error = new Error('Error editing chat');
-      chatsService.edit.mockRejectedValue(error);
+      await chatsController.createChat(req, res, next);
 
-      await chatsController.editChat(req, mockResponse);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(400);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Error editing chat',
-      });
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ message: mockError.message });
     });
   });
 
-  describe('DELETE /delete-chat/:chatId', () => {
+  describe('getChat', () => {
+    it('should fetch a chat successfully', async () => {
+      req.params.chatId = 'chat-id';
+      const mockResponse = { id: 'chat-id', data: 'chat-data' };
+      chatsService.find.mockResolvedValue(mockResponse);
+
+      await chatsController.getChat(req, res, next);
+
+      expect(chatsService.find).toHaveBeenCalledWith('chat-id', req.user.id);
+      expect(res.statusCode).toBe(200);
+      expect(res.data).toEqual(mockResponse);
+      expect(next).toHaveBeenCalled();
+    });
+
+    it('should handle errors during chat retrieval', async () => {
+      req.params.chatId = 'chat-id';
+      const mockError = new Error('Chat not found');
+      chatsService.find.mockRejectedValue(mockError);
+
+      await chatsController.getChat(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ message: mockError.message });
+    });
+  });
+
+  describe('editChat', () => {
+    it('should edit a chat successfully', async () => {
+      req.params.chatId = 'chat-id';
+      req.body = { name: 'New Chat Name' };
+      const mockResponse = { id: 'chat-id', name: 'New Chat Name' };
+      chatsService.edit.mockResolvedValue(mockResponse);
+
+      await chatsController.editChat(req, res, next);
+
+      expect(chatsService.edit).toHaveBeenCalledWith(
+        'chat-id',
+        req.user.id,
+        req.body,
+        undefined,
+      );
+      expect(res.statusCode).toBe(202);
+      expect(res.data).toEqual(mockResponse);
+      expect(next).toHaveBeenCalled();
+    });
+
+    it('should handle errors during chat editing', async () => {
+      req.params.chatId = 'chat-id';
+      const mockError = new Error('Chat edit failed');
+      chatsService.edit.mockRejectedValue(mockError);
+
+      await chatsController.editChat(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ message: mockError.message });
+    });
+  });
+
+  describe('deleteChat', () => {
     it('should delete a chat successfully', async () => {
-      const req = mockRequest({}, { chatId: '1' });
+      req.params.chatId = 'chat-id';
+      const mockResponse = { message: 'Chat deleted' };
+      chatsService.remove.mockResolvedValue(mockResponse);
 
-      chatsService.remove.mockResolvedValue(true);
+      await chatsController.deleteChat(req, res, next);
 
-      await chatsController.deleteChat(req, mockResponse);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(202);
-      expect(mockResponse.json).toHaveBeenCalledWith({
+      expect(chatsService.remove).toHaveBeenCalledWith('chat-id', req.user.id);
+      expect(res.statusCode).toBe(202);
+      expect(res.data).toEqual({
         message: 'successfully deleted the group chat',
+        response: mockResponse,
       });
+      expect(next).toHaveBeenCalled();
     });
 
-    it('should handle error when deleting chat fails', async () => {
-      const req = mockRequest({}, { chatId: '1' });
+    it('should handle errors during chat deletion', async () => {
+      req.params.chatId = 'chat-id';
+      const mockError = new Error('Chat deletion failed');
+      chatsService.remove.mockRejectedValue(mockError);
 
-      const error = new Error('Error deleting chat');
-      chatsService.remove.mockRejectedValue(error);
+      await chatsController.deleteChat(req, res, next);
 
-      await chatsController.deleteChat(req, mockResponse);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(400);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Error deleting chat',
-      });
-    });
-  });
-
-  describe('POST /add-user/:chatId', () => {
-    it('should add a user to the chat successfully', async () => {
-      const payload = { userId: 2 };
-      const req = mockRequest(payload, { chatId: '1' });
-
-      chatsService.addUser.mockResolvedValue(true);
-
-      await chatsController.addUser(req, mockResponse);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(201);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'successfully added user in chat',
-      });
-    });
-
-    it('should handle error when adding user fails', async () => {
-      const payload = { userId: 2 };
-      const req = mockRequest(payload, { chatId: '1' });
-
-      const error = new Error('Error adding user');
-      chatsService.addUser.mockRejectedValue(error);
-
-      await chatsController.addUser(req, mockResponse);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(400);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Error adding user',
-      });
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ message: mockError.message });
     });
   });
 
-  describe('POST /email-invite/:chatId', () => {
-    it('should send email invite successfully', async () => {
-      const payload = { email: 'john@example.com' };
-      const req = mockRequest(payload, { chatId: '1' });
+  describe('addUser', () => {
+    it('should add a user to a chat successfully', async () => {
+      req.params.chatId = 'chat-id';
+      req.body = { userId: 'new-user-id' };
+      const mockResponse = { id: 'new-user-id', added: true };
+      chatsService.addUser.mockResolvedValue(mockResponse);
 
-      chatsService.invite.mockResolvedValue(true);
+      await chatsController.addUser(req, res, next);
 
-      await chatsController.emailInvite(req, mockResponse);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'successfully sent invite to the email',
-      });
+      expect(chatsService.addUser).toHaveBeenCalledWith(
+        'chat-id',
+        req.user.id,
+        req.body,
+      );
+      expect(res.statusCode).toBe(201);
+      expect(res.data).toEqual(mockResponse);
+      expect(next).toHaveBeenCalled();
     });
 
-    it('should handle error when sending invite fails', async () => {
-      const payload = { email: 'john@example.com' };
-      const req = mockRequest(payload, { chatId: '1' });
+    it('should handle errors during adding user', async () => {
+      req.params.chatId = 'chat-id';
+      const mockError = new Error('Failed to add user');
+      chatsService.addUser.mockRejectedValue(mockError);
 
-      const error = new Error('Error sending invite');
-      chatsService.invite.mockRejectedValue(error);
+      await chatsController.addUser(req, res, next);
 
-      await chatsController.emailInvite(req, mockResponse);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(400);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Error sending invite',
-      });
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ message: mockError.message });
     });
   });
 
-  describe('DELETE /remove-user/:chatId/:userId', () => {
+  describe('editAdmin', () => {
+    it('should edit admin successfully', async () => {
+      req.params.chatId = 'chat-id';
+      req.body = { userId: 'admin-id' };
+      const mockResponse = { id: 'chat-id', admin: 'admin-id' };
+      chatsService.editrole.mockResolvedValue(mockResponse);
+
+      await chatsController.editAdmin(req, res, next);
+
+      expect(chatsService.editrole).toHaveBeenCalledWith(
+        'chat-id',
+        req.user.id,
+        req.body,
+      );
+      expect(res.statusCode).toBe(202);
+      expect(res.data).toEqual(mockResponse);
+      expect(next).toHaveBeenCalled();
+    });
+
+    it('should handle errors during editing admin', async () => {
+      const mockError = new Error('Failed to edit admin');
+      chatsService.editrole.mockRejectedValue(mockError);
+
+      await chatsController.editAdmin(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ message: mockError.message });
+    });
+  });
+
+  describe('emailInvite', () => {
+    it('should send an email invite successfully', async () => {
+      req.params.chatId = 'chat-id';
+      req.body = { email: 'invitee@example.com' };
+      const mockResponse = { success: true };
+      chatsService.invite.mockResolvedValue(mockResponse);
+
+      await chatsController.emailInvite(req, res, next);
+
+      expect(chatsService.invite).toHaveBeenCalledWith(
+        'chat-id',
+        req.user.id,
+        req.body,
+      );
+      expect(res.statusCode).toBe(200);
+      expect(res.data).toEqual(mockResponse);
+      expect(next).toHaveBeenCalled();
+    });
+
+    it('should handle errors during email invite', async () => {
+      const mockError = new Error('Failed to send email invite');
+      chatsService.invite.mockRejectedValue(mockError);
+
+      await chatsController.emailInvite(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ message: mockError.message });
+    });
+  });
+
+  describe('removeUser', () => {
     it('should remove a user from the chat successfully', async () => {
-      const req = mockRequest({}, { chatId: '1', userId: '2' });
-      chatsService.removeUser.mockResolvedValue(true);
+      req.params = { chatId: 'chat-id', userId: 'user-id' };
+      const mockResponse = { success: true };
+      chatsService.removeUser.mockResolvedValue(mockResponse);
 
-      await chatsController.removeUser(req, mockResponse);
+      await chatsController.removeUser(req, res, next);
 
-      expect(mockResponse.status).toHaveBeenCalledWith(202);
-      expect(mockResponse.json).toHaveBeenCalledWith({
+      expect(chatsService.removeUser).toHaveBeenCalledWith(
+        req.user.id,
+        'chat-id',
+        'user-id',
+      );
+      expect(res.statusCode).toBe(202);
+      expect(res.data).toEqual({
         message: 'successfully removed the user',
+        response: mockResponse,
       });
+      expect(next).toHaveBeenCalled();
     });
 
-    it('should handle error when removing user fails', async () => {
-      const req = mockRequest({}, { chatId: '1', userId: '2' });
+    it('should handle errors during user removal', async () => {
+      const mockError = new Error('Failed to remove user');
+      chatsService.removeUser.mockRejectedValue(mockError);
 
-      const error = new Error('Error removing user');
-      chatsService.removeUser.mockRejectedValue(error);
+      await chatsController.removeUser(req, res, next);
 
-      await chatsController.removeUser(req, mockResponse);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(400);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Error removing user',
-      });
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ message: mockError.message });
     });
   });
 
-  describe('POST /create-message/:chatId', () => {
+  describe('createMessage', () => {
     it('should create a message successfully', async () => {
-      const payload = { content: 'Hello, world!' };
-      const req = mockRequest(
-        payload,
-        { chatId: '1' },
-        {},
-        { path: 'media.jpg' },
+      req.params.chatId = 'chat-id';
+      req.body = { content: 'Hello!' };
+      req.file = { path: 'media-path' };
+      const mockResponse = { id: 'message-id', content: 'Hello!' };
+      chatsService.createMessage.mockResolvedValue(mockResponse);
+
+      await chatsController.createMessage(req, res, next);
+
+      expect(chatsService.createMessage).toHaveBeenCalledWith(
+        'chat-id',
+        req.user.id,
+        req.body,
+        'media-path',
       );
-
-      chatsService.createMessage.mockResolvedValue(true);
-
-      await chatsController.createMessage(req, mockResponse);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(201);
-      expect(mockResponse.json).toHaveBeenCalledWith({
+      expect(res.statusCode).toBe(202);
+      expect(res.data).toEqual({
         message: 'successfully added the message',
+        response: mockResponse,
       });
+      expect(next).toHaveBeenCalled();
     });
 
-    it('should handle error when creating message fails', async () => {
-      const payload = { content: 'Hello, world!' };
-      const req = mockRequest(payload, { chatId: '1' });
+    it('should handle errors during message creation', async () => {
+      const mockError = new Error('Failed to create message');
+      chatsService.createMessage.mockRejectedValue(mockError);
 
-      const error = new Error('Error creating message');
-      chatsService.createMessage.mockRejectedValue(error);
+      await chatsController.createMessage(req, res, next);
 
-      await chatsController.createMessage(req, mockResponse);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(400);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Error creating message',
-      });
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ message: mockError.message });
     });
   });
 
-  describe('PUT /edit-message/:chatId/:messageId', () => {
+  describe('editMessage', () => {
     it('should edit a message successfully', async () => {
-      const payload = { content: 'Updated message' };
-      const req = mockRequest(
-        payload,
-        { chatId: '1', messageId: '10' },
-        {},
-        { path: 'new-media.jpg' },
+      req.params = { chatId: 'chat-id', messageId: 'message-id' };
+      req.body = { content: 'Updated message' };
+      req.file = { path: 'media-path' };
+      const mockResponse = [{ id: 'message-id', content: 'Updated message' }];
+      chatsService.editMessage.mockResolvedValue(mockResponse);
+
+      await chatsController.editMessage(req, res, next);
+
+      expect(chatsService.editMessage).toHaveBeenCalledWith(
+        'chat-id',
+        'message-id',
+        req.user.id,
+        req.body,
+        'media-path',
       );
-
-      const response = { messageId: '10', content: 'Updated message' };
-      chatsService.editMessage.mockResolvedValue(response);
-
-      await chatsController.editMessage(req, mockResponse);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalledWith({
+      expect(res.statusCode).toBe(200);
+      expect(res.data).toEqual({
         message: 'Message edited successfully',
-        response,
+        response: mockResponse[0],
       });
+      expect(next).toHaveBeenCalled();
     });
 
-    it('should handle error when editing message fails', async () => {
-      const payload = { content: 'Updated message' };
-      const req = mockRequest(payload, { chatId: '1', messageId: '10' });
+    it('should handle errors during message editing', async () => {
+      const mockError = new Error('Failed to edit message');
+      chatsService.editMessage.mockRejectedValue(mockError);
 
-      const error = new Error('Error editing message');
-      chatsService.editMessage.mockRejectedValue(error);
+      await chatsController.editMessage(req, res, next);
 
-      await chatsController.editMessage(req, mockResponse);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(400);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Error editing message',
-      });
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ message: mockError.message });
     });
   });
 
-  describe('DELETE /delete-message/:chatId/:messageId', () => {
+  describe('deleteMessage', () => {
     it('should delete a message successfully', async () => {
-      const req = mockRequest({}, { chatId: '1', messageId: '10' });
+      req.params = { chatId: 'chat-id', messageId: 'message-id' };
+      const mockResponse = { success: true };
+      chatsService.deleteMessage.mockResolvedValue(mockResponse);
 
-      const response = 'Message deleted successfully';
-      chatsService.deleteMessage.mockResolvedValue(response);
+      await chatsController.deleteMessage(req, res, next);
 
-      await chatsController.deleteMessage(req, mockResponse);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: response,
-      });
+      expect(chatsService.deleteMessage).toHaveBeenCalledWith(
+        'chat-id',
+        'message-id',
+        req.user.id,
+      );
+      expect(res.statusCode).toBe(200);
+      expect(res.data).toEqual(mockResponse);
+      expect(next).toHaveBeenCalled();
     });
 
-    it('should handle error when deleting message fails', async () => {
-      const req = mockRequest({}, { chatId: '1', messageId: '10' });
+    it('should handle errors during message deletion', async () => {
+      const mockError = new Error('Failed to delete message');
+      chatsService.deleteMessage.mockRejectedValue(mockError);
 
-      const error = new Error('Error deleting message');
-      chatsService.deleteMessage.mockRejectedValue(error);
+      await chatsController.deleteMessage(req, res, next);
 
-      await chatsController.deleteMessage(req, mockResponse);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(400);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Error deleting message',
-      });
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ message: mockError.message });
     });
   });
 
-  describe('GET /display-messages/:chatId', () => {
+  describe('displayMessages', () => {
     it('should display messages successfully', async () => {
-      const req = mockRequest({}, { chatId: '1' }, { page: '1' });
+      req.params.chatId = 'chat-id';
+      req.query = { page: 1, filter: 'all' };
+      const mockResponse = [{ id: 'message-1', content: 'Hello' }];
+      chatsService.displayMessages.mockResolvedValue(mockResponse);
 
-      const response = [{ messageId: '10', content: 'Hello' }];
-      chatsService.displayMessages.mockResolvedValue(response);
+      await chatsController.displayMessages(req, res, next);
 
-      await chatsController.displayMessages(req, mockResponse);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: response,
-      });
+      expect(chatsService.displayMessages).toHaveBeenCalledWith(
+        'chat-id',
+        req.user.id,
+        1,
+        'all',
+      );
+      expect(res.statusCode).toBe(200);
+      expect(res.data).toEqual(mockResponse);
+      expect(next).toHaveBeenCalled();
     });
 
-    it('should handle error when fetching messages fails', async () => {
-      const req = mockRequest({}, { chatId: '1' });
+    it('should handle errors during message display', async () => {
+      const mockError = new Error('Failed to display messages');
+      chatsService.displayMessages.mockRejectedValue(mockError);
 
-      const error = new Error('Error fetching messages');
-      chatsService.displayMessages.mockRejectedValue(error);
+      await chatsController.displayMessages(req, res, next);
 
-      await chatsController.displayMessages(req, mockResponse);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(400);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Error fetching messages',
-      });
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ message: mockError.message });
     });
   });
 });
