@@ -1,164 +1,199 @@
-// const request = require('supertest');
-// const app = require('../../src/index');
-// const User = require('../../src/models').User;
-// const jwt = require('jsonwebtoken');
+const request = require('supertest');
+const app = require('../../src/index');
+const chatsService = require('../../src/services/chats.service');
+const { User, sequelize } = require('../../src/models');
+const randomstring = require('randomstring');
+const jwt = require('jsonwebtoken'); // Add this for generating JWT tokens
+let server;
 
-// let server;
-// let userToken;
-// let chatId;
-// let userId;
+jest.mock('../../src/services/chats.service');
 
+beforeAll(done => {
+	server = app.listen(4000, () => {
+		done();
+	});
+});
 
-// beforeAll(done => {
-// 	server = app.listen(4000, () => {
-// 		done();
-// 	});
-// });
+describe('POST /chats', () => {
+	let userToken;
+	const userEmail = `${randomstring.generate(10)}@gmail.com`;
+	let user;
 
+	beforeAll(async () => {
+		await require('../setup')();
 
+		const registerResponse = await request(app)
+			.post('/api/auth/register')
+			.field('name', 'Test User')
+			.field('email', userEmail)
+			.field('about', 'Test user for chat API tests')
+			.attach('image', Buffer.from('dummy image content'), 'image.jpg');
 
-// describe('Chat Controller Tests', () => {
+		expect(registerResponse.statusCode).toEqual(200);
+		expect(registerResponse.body).toHaveProperty(
+			'message',
+			'User has been successfully created',
+		);
 
+		const otpResponse = await request(app)
+			.post('/api/auth/sendOtp')
+			.send({ email: userEmail });
 
-// beforeAll(async () => {
-//   // Start the server and create a test user
-//   await require('../setup')();  // Ensure setup works properly
- 
-//   // Create a user for authentication
-//   const user = await User.create({
-//     name: 'Test User 2',
-//     email: 'test2@gmail.com',
-//     about: 'Test user for authentication API tests',
-//     image: 'test-image-url',
-//   });
+		expect(otpResponse.statusCode).toEqual(200);
+		expect(otpResponse.body).toHaveProperty('success', true);
+		expect(otpResponse.body.message).toHaveProperty('otp');
+		const testOtp = otpResponse.body.message.otp;
 
-//   userId = user.id;
+		const verifyOtpResponse = await request(app)
+			.post('/api/auth/verifyOtp')
+			.send({ email: userEmail, otp: testOtp });
 
-//   // Generate a JWT token for the user
-//   userToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
-//     expiresIn: '1h',
-//   });
+		expect(verifyOtpResponse.statusCode).toEqual(200);
+		expect(verifyOtpResponse.body).toHaveProperty(
+			'message',
+			'User verified successfully',
+		);
+		userToken = verifyOtpResponse.body.token;
+	});
 
-//   console.log('Generated JWT token:', userToken);  // Debugging line to check token
-// });
+	afterAll(async () => {
+		await User.destroy({ where: { email: userEmail } });
+		await require('../tearDown')();
+		await new Promise(resolve => server.close(resolve));
+	});
 
-// afterAll(async () => {
-//   await require('../tearDown')();  // Ensure teardown works properly
-//   // await server.close();
-//   await new Promise(resolve => server.close(resolve));
-// });
+	describe('Create one-to-one chat', () => {
+		it('should create a one-to-one chat successfully', async () => {
+			const payload = {
+				type: 'one-to-one',
+				user_ids: [2],
+				name: 'Chat with John',
+			};
+			const response = { chatId: 1 };
 
+			chatsService.createSingle.mockResolvedValue(response);
 
-	
-//   describe('POST /chats', () => {
-//     it('should create a one-to-one chat successfully', async () => {
-//       const payload = { type: 'one-to-one', user_ids: [userId] };
+			const res = await request(app)
+				.post('/chats')
+				.set('authorization', userToken)
+				.send(payload);
 
-//       const response = await request(app)
-//         .post('/chats')
-//         .set('authorization', userToken)  // Pass the token directly
-//         .send(payload);
+			expect(res.statusCode).toEqual(201);
+			expect(res.body.message).toBe('User has been successfully created');
+			expect(res.body.response).toEqual(response);
+			expect(chatsService.createSingle).toHaveBeenCalledWith(
+				payload,
+				undefined,
+				expect.any(Number),
+			);
+		});
 
-//       console.log('Response Body:', response.body);  // Debugging line to check response
-//       expect(response.status).toBe(201);
-//       expect(response.body.message).toBe('Chat successfully created');
-//       expect(response.body.response).toHaveProperty('id');
-//       chatId = response.body.response.id;  // Store the chat ID for further tests
-//     });
+		it('should throw an error if user does not exist', async () => {
+			const payload = {
+				type: 'one-to-one',
+				user_ids: [999],
+				name: 'Chat with John',
+			};
 
-//     it('should create a group chat successfully', async () => {
-//       const payload = {
-//         type: 'group',
-//         name: 'Test Group',
-//         description: 'A test group chat',
-//         user_ids: [userId],
-//       };
+			chatsService.createSingle.mockRejectedValue(new Error('User Not Found'));
 
-//       const response = await request(app)
-//         .post('/chats')
-//         .set('authorization', userToken)  // Pass token directly
-//         .send(payload);
+			const res = await request(app)
+				.post('/chats')
+				.set('authorization', userToken)
+				.send(payload);
 
-//       expect(response.status).toBe(201);
-//       expect(response.body.message).toBe('Chat successfully created');
-//       expect(response.body.response).toHaveProperty('id');
-//     });
-//   });
+			expect(res.statusCode).toEqual(404);
+			expect(res.body.message).toBe('User Not Found');
+		});
+	});
 
-//   describe('GET /chats/:chatId', () => {
-//     it('should get chat details successfully', async () => {
-//       console.log('Using chatId:', chatId);  // Debugging line to check if chatId is valid
+	describe('Create group chat', () => {
+		it('should create a group chat successfully', async () => {
+			const payload = {
+				type: 'group',
+				name: 'Test Group',
+				description: 'Group chat description',
+				user_ids: [2, 3],
+			};
+			const response = { chatId: 2 };
 
-//       const response = await request(app)
-//         .get(`/chats/${chatId}`)
-//         .set('authorization', userToken);  // Pass token directly
+			chatsService.createGroup.mockResolvedValue(response);
 
-//       expect(response.status).toBe(200);
-//       expect(response.body.message).toBe('Chat details retrieved successfully');
-//       expect(response.body.response).toHaveProperty('id', chatId);
-//     });
+			const res = await request(app)
+				.post('/chats')
+				.set('authorization', userToken)
+				.send(payload);
 
-//     it('should return error if chat does not exist', async () => {
-//       const response = await request(app)
-//         .get('/chats/9999')  // Non-existent chatId
-//         .set('authorization', userToken);
+			expect(res.statusCode).toEqual(201);
+			expect(res.body.message).toBe('User has been successfully created');
+			expect(res.body.response).toEqual(response);
+			expect(chatsService.createGroup).toHaveBeenCalledWith(
+				payload,
+				undefined,
+				expect.any(Number),
+			);
+		});
 
-//       expect(response.status).toBe(404);
-//       expect(response.body.message).toBe('Chat does not exist');
-//     });
-//   });
+		it('should throw an error if chat creation fails', async () => {
+			const payload = {
+				type: 'group',
+				name: 'Test Group',
+				description: 'Group chat description',
+				user_ids: [2, 3],
+			};
 
-//   describe('PUT /chats/:chatId', () => {
-//     it('should update the group chat successfully', async () => {
-//       const payload = {
-//         name: 'Updated Group Name',
-//         description: 'Updated description',
-//       };
+			chatsService.createGroup.mockRejectedValue(
+				new Error('Chat creation failed'),
+			);
 
-//       const response = await request(app)
-//         .put(`/chats/${chatId}`)
-//         .set('authorization', userToken)  // Pass token directly
-//         .send(payload);
+			const res = await request(app)
+				.post('/chats')
+				.set('authorization', userToken)
+				.send(payload);
 
-//       expect(response.status).toBe(202);
-//       expect(response.body.message).toBe('Group chat updated successfully');
-//     });
+			expect(res.statusCode).toEqual(400);
+			expect(res.body.message).toBe('Chat creation failed');
+		});
+	});
 
-//     it('should return error if user is not authorized to edit the chat', async () => {
-//       const payload = {
-//         name: 'Updated Group Name',
-//         description: 'Updated description',
-//       };
+	describe('Route validation and missing fields', () => {
+		it('should return 400 if payload is missing required fields', async () => {
+			const payload = {};
 
-//       const unauthorizedToken = 'invalidtoken';  // Simulating an invalid token
+			const res = await request(app)
+				.post('/chats')
+				.set('authorization', userToken)
+				.send(payload);
 
-//       const response = await request(app)
-//         .put(`/chats/${chatId}`)
-//         .set('authorization', unauthorizedToken)  // Invalid token for testing
-//         .send(payload);
+			expect(res.statusCode).toEqual(400);
+			expect(res.body.message).toBe(
+				'Validation failed: Missing required fields',
+			);
+		});
 
-//       expect(response.status).toBe(403);
-//       expect(response.body.message).toBe('User is not admin of the chat');
-//     });
-//   });
+		it('should return 400 if invalid image is uploaded for group chat', async () => {
+			const payload = {
+				type: 'group',
+				name: 'Invalid Image Group',
+				description: 'Invalid image file test',
+				user_ids: [2, 3],
+			};
 
-//   describe('DELETE /chats/:chatId', () => {
-//     it('should delete the chat successfully', async () => {
-//       const response = await request(app)
-//         .delete(`/chats/${chatId}`)
-//         .set('authorization', userToken);  // Pass token directly
+			const res = await request(app)
+				.post('/chats')
+				.set('authorization', userToken)
+				.field('type', 'group')
+				.field('name', 'Invalid Image Group')
+				.field('description', 'Invalid image file test')
+				.field('user_ids', [2, 3])
+				.attach(
+					'image',
+					Buffer.from('dummy image content'),
+					'invalid-image.jpg',
+				);
 
-//       expect(response.status).toBe(202);
-//       expect(response.body.message).toBe('Chat deleted successfully');
-//     });
-
-//     it('should return error if chat does not exist', async () => {
-//       const response = await request(app)
-//         .delete('/chats/9999')  // Non-existent chatId
-//         .set('authorization', userToken);
-
-//       expect(response.status).toBe(404);
-//       expect(response.body.message).toBe('Chat does not exist');
-//     });
-//   });
-// });
+			expect(res.statusCode).toEqual(400);
+			expect(res.body.message).toBe('Invalid image file');
+		});
+	});
+});

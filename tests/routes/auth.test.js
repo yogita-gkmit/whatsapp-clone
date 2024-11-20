@@ -1,36 +1,34 @@
 const request = require('supertest');
 const app = require('../../src/index');
-const User = require('../../src/models').User;
+const { User, sequelize } = require('../../src/models');
 const { transporter } = require('../../src/utils/email.util');
 const environment = process.env.NODE_ENV || 'development';
 const config = require('../../src/config/config.js')[environment];
-
-
+var randomstring = require('randomstring');
 let server;
 
 jest.mock('../../src/utils/email.util');
 
-
 beforeAll(done => {
-	server = app.listen(4000, () => {
+	server = app.listen(5000, () => {
 		done();
 	});
 });
 
 describe('Authentication API', () => {
-	let userEmail = 'test@gmail.com';
+	let userEmail = `${randomstring.generate(10)}@gmail.com`;
 	let testOtp;
 	let userToken;
 	let user;
-
 	beforeAll(async () => {
 		await require('../setup')();
+		// await sequelize.sync({ force: true });
 
 		user = await User.create({
 			name: 'Test User',
 			email: userEmail,
 			about: 'Test user for authentication API tests',
-			image: 'test-image-url',
+			image: `${randomstring.generate(10)}`,
 		});
 	});
 
@@ -116,7 +114,7 @@ describe('Authentication API', () => {
 			const res = await request(app)
 				.post('/api/auth/register')
 				.field('name', 'New User')
-				.field('email', 'newuser@example.com')
+				.field('email', `${randomstring.generate(10)}@gmail.com`)
 				.field('about', 'This is a new user')
 				.attach('image', Buffer.from('dummy image content'), 'image.jpg');
 
