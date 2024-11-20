@@ -74,8 +74,10 @@ describe('Chat Service Tests', () => {
       const loggedInId = 1;
 
       User.findByPk.mockResolvedValue(null);
-
-      await commonHelpers.customError('User does not found', 404);
+      commonHelpers.customError.mockReturnValue(new Error('User Not Found'));
+      await expect(
+        chatService.createSingle(payload, loggedInId),
+      ).rejects.toThrow('User Not Found');
     });
   });
 
@@ -124,8 +126,12 @@ describe('Chat Service Tests', () => {
       const loggedInId = 1;
 
       Chat.create.mockResolvedValue(null);
-
-      await commonHelpers.customError('Chat creation failed', 400);
+      commonHelpers.customError.mockReturnValue(
+        new Error('Chat creation failed'),
+      );
+      await expect(
+        chatService.createGroup(payload, image, loggedInId),
+      ).rejects.toThrow('Chat creation failed');
     });
   });
 
@@ -168,10 +174,16 @@ describe('Chat Service Tests', () => {
       };
       const chatId = 1;
       const loggedInId = 1;
+      const image = 'updated-image.jpg';
 
       Chat.findByPk.mockResolvedValue(null);
 
-      await commonHelpers.customError('Chat does not exist', 404);
+      commonHelpers.customError.mockReturnValue(
+        new Error('Chat does not exist'),
+      );
+      await expect(
+        chatService.edit(chatId, loggedInId, payload, image),
+      ).rejects.toThrow('Chat does not exist');
     });
 
     it('should throw error if user is not admin', async () => {
@@ -181,11 +193,15 @@ describe('Chat Service Tests', () => {
       };
       const chatId = 1;
       const loggedInId = 1;
+      const image = 'updated-image.jpg';
 
       Chat.findByPk.mockResolvedValue(mockChat);
       UserChat.findOne.mockResolvedValue({ is_admin: false });
 
-      await commonHelpers.customError('User is not admin', 403);
+      commonHelpers.customError.mockReturnValue(new Error('User is not admin'));
+      await expect(
+        chatService.edit(chatId, loggedInId, payload, image),
+      ).rejects.toThrow('User is not admin');
     });
   });
 
@@ -218,7 +234,10 @@ describe('Chat Service Tests', () => {
       Chat.findByPk.mockResolvedValue(mockChat);
       UserChat.findOne.mockResolvedValue({ is_admin: false });
 
-      await commonHelpers.customError('User is not admin', 403);
+      commonHelpers.customError.mockReturnValue(new Error('User is not admin'));
+      await expect(
+        chatService.removeUser(loggedInId, chatId, userId),
+      ).rejects.toThrow('User is not admin');
     });
   });
 
@@ -265,7 +284,10 @@ describe('Chat Service Tests', () => {
       User.findByPk.mockResolvedValue(mockUser);
       UserChat.findOne.mockResolvedValue(null);
 
-      await commonHelpers.customError('User not found', 404);
+      commonHelpers.customError.mockReturnValue(new Error('User not found'));
+      await expect(
+        chatService.createMessage(chatId, loggedInId, payload, media),
+      ).rejects.toThrow('User not found');
     });
   });
 
@@ -295,10 +317,16 @@ describe('Chat Service Tests', () => {
     it('should throw error if user is not in chat', async () => {
       const chatId = 1;
       const loggedInId = 1;
+      const page = 0;
 
       UserChat.findOne.mockResolvedValue(null);
 
-      await commonHelpers.customError('User not found in chat', 404);
+      commonHelpers.customError.mockReturnValue(
+        new Error('User not found in chat'),
+      );
+      await expect(
+        chatService.displayMessages(chatId, loggedInId, page),
+      ).rejects.toThrow('User not found in chat');
     });
   });
 
@@ -338,7 +366,10 @@ describe('Chat Service Tests', () => {
 
       Message.findByPk.mockResolvedValue(null);
 
-      await commonHelpers.customError('Message not found', 404);
+      commonHelpers.customError.mockReturnValue(new Error('Message not found'));
+      await expect(
+        chatService.deleteMessage(loggedInId, messageId, 1),
+      ).rejects.toThrow('Message not found');
     });
   });
 });

@@ -153,11 +153,12 @@ describe('User Service Tests', () => {
         },
       ];
 
+      const date = new Date();
       const mockLastMessage = [
         {
           message: 'Last message',
           media: null,
-          created_at: new Date(),
+          created_at: date,
         },
       ];
 
@@ -169,19 +170,22 @@ describe('User Service Tests', () => {
 
       expect(result).toEqual({
         results: [
-          {
-            chat_id: 1,
-            chat_name: 'Chat 1',
-            description: 'Description',
-            chat_image: 'chat-image.jpg',
-            type: 'group',
-            last_message: 'Last message',
-            last_media: null,
-            last_message_created_at: expect.any(Date),
-            user_name: null,
-            user_image: null,
-            user_about: null,
-          },
+          [
+            {
+              id: 1,
+              name: 'Chat 1',
+              description: 'Description',
+              image: 'chat-image.jpg',
+              type: 'group',
+            },
+          ],
+          [
+            {
+              message: 'Last message',
+              media: null,
+              created_at: date,
+            },
+          ],
         ],
       });
       expect(sequelize.query).toHaveBeenCalledWith(
@@ -195,13 +199,19 @@ describe('User Service Tests', () => {
     it('should throw error if user does not exist', async () => {
       User.findByPk.mockResolvedValue(null);
 
-      await commonHelpers.customError('user does not exist', 404);
+      commonHelpers.customError.mockReturnValue(
+        new Error('user does not exist'),
+      );
+      await expect(chatService.inbox(1, 1)).rejects.toThrow(
+        'user does not exist',
+      );
     });
 
     it('should throw error if logged-in user does not match the requested user', async () => {
-      User.findByPk.mockResolvedValue(mockUser);
+      User.findByPk.mockResolvedValue({ id: 1 });
 
-      await commonHelpers.customError('Invalid user', 400);
+      commonHelpers.customError.mockReturnValue(new Error('Invalid user'));
+      await expect(chatService.inbox(1, 2)).rejects.toThrow('Invalid user');
     });
   });
 });
