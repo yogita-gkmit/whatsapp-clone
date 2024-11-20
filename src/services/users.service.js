@@ -38,6 +38,7 @@ async function editProfile(id, image, payload) {
 			},
 			{ transaction },
 		);
+		console.log('response', response);
 		await transaction.commit();
 		return response;
 	} catch (error) {
