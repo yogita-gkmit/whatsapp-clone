@@ -153,12 +153,12 @@ describe('POST /chats', () => {
 
 	describe('removeUser', () => {
 		it('should remove a user from the group successfully', async () => {
-			const chatId = 1;
+			const id = 1;
 			const userId = 2;
 			const loggedInId = 1;
 
 			Chat.findByPk = jest.fn().mockResolvedValue({
-				id: chatId,
+				id: id,
 				type: 'group',
 				name: 'Test Group',
 				description: 'A test group chat',
@@ -171,12 +171,12 @@ describe('POST /chats', () => {
 
 			UserChat.destroy = jest.fn().mockResolvedValue(1);
 
-			const result = await chatsService.removeUser(loggedInId, chatId, userId);
+			const result = await chatsService.removeUser(loggedInId, id, userId);
 
 			expect(result).toBe(1);
 			expect(UserChat.destroy).toHaveBeenCalledWith(
 				expect.objectContaining({
-					where: { chat_id: chatId, user_id: userId },
+					where: { chat_id: id, user_id: userId },
 					transaction: mockTransaction,
 				}),
 			);
@@ -185,13 +185,13 @@ describe('POST /chats', () => {
 
 	describe('createMessage', () => {
 		it('should create a message successfully', async () => {
-			const chatId = 1;
+			const id = 1;
 			const userId = 2;
 			const payload = { message: 'Hello!' };
 			const media = null;
 
 			Chat.findByPk = jest.fn().mockResolvedValue({
-				id: chatId,
+				id: id,
 				name: 'Group A',
 				type: 'group',
 			});
@@ -201,7 +201,7 @@ describe('POST /chats', () => {
 				.mockResolvedValue({ id: 1, message: 'Hello!' });
 
 			const result = await chatsService.createMessage(
-				chatId,
+				id,
 				userId,
 				payload,
 				media,
@@ -214,7 +214,7 @@ describe('POST /chats', () => {
 
 	describe('editMessage', () => {
 		// it('should edit a message successfully', async () => {
-		// 	const chatId = 1;
+		// 	const id = 1;
 		// 	const messageId = 1;
 		// 	const userId = 2;
 		// 	const payload = { message: 'Updated message' };
@@ -232,7 +232,7 @@ describe('POST /chats', () => {
 		// 		]);
 
 		// 	const result = await chatsService.editMessage(
-		// 		chatId,
+		// 		id,
 		// 		messageId,
 		// 		userId,
 		// 		payload,
@@ -245,7 +245,7 @@ describe('POST /chats', () => {
 		// });
 
 		it('should throw error if user cannot edit message', async () => {
-			const chatId = 1;
+			const id = 1;
 			const messageId = 2;
 			const userId = 2;
 			const payload = { message: 'Updated message' };
@@ -255,7 +255,7 @@ describe('POST /chats', () => {
 				.mockResolvedValue([{ id: messageId, user_id: 1 }]);
 
 			await expect(
-				chatsService.editMessage(chatId, messageId, userId, payload, null),
+				chatsService.editMessage(id, messageId, userId, payload, null),
 			).rejects.toThrow(
 				commonHelpers.customError('user can not edit this message', 403),
 			);
@@ -264,7 +264,7 @@ describe('POST /chats', () => {
 
 	describe('displayMessages', () => {
 		it('should return messages with pagination', async () => {
-			const chatId = 1;
+			const id = 1;
 			const userId = 2;
 			const page = 0;
 			const filter = 'message';
@@ -272,7 +272,7 @@ describe('POST /chats', () => {
 			Message.findAll = jest.fn().mockResolvedValue([{ message: 'Hello' }]);
 
 			const messages = await chatsService.displayMessages(
-				chatId,
+				id,
 				userId,
 				page,
 				filter,
@@ -282,13 +282,13 @@ describe('POST /chats', () => {
 		});
 
 		it('should throw error if user does not have access to chat', async () => {
-			const chatId = 1;
+			const id = 1;
 			const userId = 999;
 
 			UserChat.findOne = jest.fn().mockResolvedValue(null);
 
 			await expect(
-				chatsService.displayMessages(chatId, userId, 0, ''),
+				chatsService.displayMessages(id, userId, 0, ''),
 			).rejects.toThrow(
 				commonHelpers.customError('user can not access this chat', 403),
 			);
