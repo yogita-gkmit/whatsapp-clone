@@ -1,8 +1,16 @@
 async function response(req, res) {
 	const status = res.statusCode || 200;
-	const data = res.data || {};
+	const data = res.data.data;
+	const message = res.data.message;
 
-	res.status(status).json({ data });
+	res.status(status).json({ message, data });
 }
 
-module.exports = { response };
+async function userResponse(req, res) {
+	const status = res.statusCode || 200;
+	const data = res.data;
+	const message = res.message;
+
+	res.status(status).json({ message, data });
+}
+module.exports = { response, userResponse };

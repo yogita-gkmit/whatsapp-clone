@@ -5,7 +5,6 @@ async function users(req, res, next) {
 		const id = req.user.id;
 		const { page } = req.query;
 		const response = await usersService.users(id, page);
-
 		res.statusCode = 200;
 		res.data = response;
 		next();
@@ -20,7 +19,6 @@ async function myProfile(req, res, next) {
 	try {
 		const id = req.user.id;
 		const response = await usersService.profile(id);
-
 		res.statusCode = 200;
 		res.data = response;
 		next();
@@ -35,7 +33,6 @@ async function specificProfile(req, res, next) {
 	try {
 		const { id } = req.params;
 		const response = await usersService.profile(id);
-
 		res.statusCode = 200;
 		res.data = response;
 		next();
@@ -49,11 +46,9 @@ async function specificProfile(req, res, next) {
 async function editMyProfile(req, res, next) {
 	try {
 		const id = req.user.id;
-
 		const image = req.file?.path;
 		const payload = req.body;
 		const response = await usersService.editProfile(id, image, payload);
-
 		res.statusCode = 200;
 		res.data = response;
 		next();
@@ -69,9 +64,7 @@ async function inbox(req, res, next) {
 		const { id } = req.params;
 		const { page } = req.query;
 		const loggedInId = req.user.id;
-
 		const response = await usersService.inbox(id, loggedInId, page);
-
 		res.statusCode = 200;
 		res.data = response;
 		next();

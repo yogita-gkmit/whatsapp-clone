@@ -74,8 +74,6 @@ describe('Authentication API', () => {
 
 	describe('POST /verifyOtp', () => {
 		it('should verify OTP for a registered user', async () => {
-			// jwt.sign.mockReturnValue(userToken);
-
 			const res = await request(app)
 				.post('/api/auth/verifyOtp')
 				.send({ email: userEmail, otp: testOtp });
@@ -139,14 +137,6 @@ describe('Authentication API', () => {
 	});
 
 	describe('POST /logout', () => {
-		beforeAll(() => {
-			// console.log('****** => ', jwt.sign);
-			// const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
-			// 	expiresIn: '170h',
-			// });
-			// userToken = token;
-		});
-
 		it('should log out a user', async () => {
 			console.log(
 				'##################################################',

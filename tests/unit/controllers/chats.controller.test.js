@@ -74,7 +74,7 @@ describe('Chat Controller Tests', () => {
 
   describe('getChat', () => {
     it('should fetch a chat successfully', async () => {
-      req.params.chatId = 'chat-id';
+      req.params.id = 'chat-id';
       const mockResponse = { id: 'chat-id', data: 'chat-data' };
       chatsService.find.mockResolvedValue(mockResponse);
 
@@ -87,7 +87,7 @@ describe('Chat Controller Tests', () => {
     });
 
     it('should handle errors during chat retrieval', async () => {
-      req.params.chatId = 'chat-id';
+      req.params.id = 'chat-id';
       const mockError = new Error('Chat not found');
       chatsService.find.mockRejectedValue(mockError);
 
@@ -100,7 +100,7 @@ describe('Chat Controller Tests', () => {
 
   describe('editChat', () => {
     it('should edit a chat successfully', async () => {
-      req.params.chatId = 'chat-id';
+      req.params.id = 'chat-id';
       req.body = { name: 'New Chat Name' };
       const mockResponse = { id: 'chat-id', name: 'New Chat Name' };
       chatsService.edit.mockResolvedValue(mockResponse);
@@ -119,7 +119,7 @@ describe('Chat Controller Tests', () => {
     });
 
     it('should handle errors during chat editing', async () => {
-      req.params.chatId = 'chat-id';
+      req.params.id = 'chat-id';
       const mockError = new Error('Chat edit failed');
       chatsService.edit.mockRejectedValue(mockError);
 
@@ -132,7 +132,7 @@ describe('Chat Controller Tests', () => {
 
   describe('deleteChat', () => {
     it('should delete a chat successfully', async () => {
-      req.params.chatId = 'chat-id';
+      req.params.id = 'chat-id';
       const mockResponse = { message: 'Chat deleted' };
       chatsService.remove.mockResolvedValue(mockResponse);
 
@@ -148,7 +148,7 @@ describe('Chat Controller Tests', () => {
     });
 
     it('should handle errors during chat deletion', async () => {
-      req.params.chatId = 'chat-id';
+      req.params.id = 'chat-id';
       const mockError = new Error('Chat deletion failed');
       chatsService.remove.mockRejectedValue(mockError);
 
@@ -161,17 +161,20 @@ describe('Chat Controller Tests', () => {
 
   describe('addUser', () => {
     it('should add a user to a chat successfully', async () => {
-      req.params.chatId = 'chat-id';
-      req.body = { userId: 'new-user-id' };
+      req.params.id = 'chat-id';
+      req.query.token = 'some-token';
+      req.user.id = 'user-id';
+
       const mockResponse = { id: 'new-user-id', added: true };
       chatsService.addUser.mockResolvedValue(mockResponse);
 
-      await chatsController.addUser(req, res, next);
+      const result = await chatsController.addUser(req, res, next);
+      console.log(result);
 
       expect(chatsService.addUser).toHaveBeenCalledWith(
         'chat-id',
-        req.user.id,
-        req.body,
+        'user-id',
+        'some-token',
       );
       expect(res.statusCode).toBe(201);
       expect(res.data).toEqual(mockResponse);
@@ -179,7 +182,7 @@ describe('Chat Controller Tests', () => {
     });
 
     it('should handle errors during adding user', async () => {
-      req.params.chatId = 'chat-id';
+      req.params.id = 'chat-id';
       const mockError = new Error('Failed to add user');
       chatsService.addUser.mockRejectedValue(mockError);
 
@@ -192,7 +195,7 @@ describe('Chat Controller Tests', () => {
 
   describe('editAdmin', () => {
     it('should edit admin successfully', async () => {
-      req.params.chatId = 'chat-id';
+      req.params.id = 'chat-id';
       req.body = { userId: 'admin-id' };
       const mockResponse = { id: 'chat-id', admin: 'admin-id' };
       chatsService.editrole.mockResolvedValue(mockResponse);
@@ -222,7 +225,7 @@ describe('Chat Controller Tests', () => {
 
   describe('emailInvite', () => {
     it('should send an email invite successfully', async () => {
-      req.params.chatId = 'chat-id';
+      req.params.id = 'chat-id';
       req.body = { email: 'invitee@example.com' };
       const mockResponse = { success: true };
       chatsService.invite.mockResolvedValue(mockResponse);
@@ -252,7 +255,7 @@ describe('Chat Controller Tests', () => {
 
   describe('removeUser', () => {
     it('should remove a user from the chat successfully', async () => {
-      req.params = { chatId: 'chat-id', userId: 'user-id' };
+      req.params = { id: 'chat-id', userId: 'user-id' };
       const mockResponse = { success: true };
       chatsService.removeUser.mockResolvedValue(mockResponse);
 
@@ -284,7 +287,7 @@ describe('Chat Controller Tests', () => {
 
   describe('createMessage', () => {
     it('should create a message successfully', async () => {
-      req.params.chatId = 'chat-id';
+      req.params.id = 'chat-id';
       req.body = { content: 'Hello!' };
       req.file = { path: 'media-path' };
       const mockResponse = { id: 'message-id', content: 'Hello!' };
@@ -319,7 +322,7 @@ describe('Chat Controller Tests', () => {
 
   describe('editMessage', () => {
     it('should edit a message successfully', async () => {
-      req.params = { chatId: 'chat-id', messageId: 'message-id' };
+      req.params = { id: 'chat-id', messageId: 'message-id' };
       req.body = { content: 'Updated message' };
       req.file = { path: 'media-path' };
       const mockResponse = [{ id: 'message-id', content: 'Updated message' }];
@@ -332,7 +335,6 @@ describe('Chat Controller Tests', () => {
         'message-id',
         req.user.id,
         req.body,
-        'media-path',
       );
       expect(res.statusCode).toBe(200);
       expect(res.data).toEqual({
@@ -355,7 +357,7 @@ describe('Chat Controller Tests', () => {
 
   describe('deleteMessage', () => {
     it('should delete a message successfully', async () => {
-      req.params = { chatId: 'chat-id', messageId: 'message-id' };
+      req.params = { id: 'chat-id', messageId: 'message-id' };
       const mockResponse = { success: true };
       chatsService.deleteMessage.mockResolvedValue(mockResponse);
 
@@ -384,7 +386,7 @@ describe('Chat Controller Tests', () => {
 
   describe('displayMessages', () => {
     it('should display messages successfully', async () => {
-      req.params.chatId = 'chat-id';
+      req.params.id = 'chat-id';
       req.query = { page: 1, filter: 'all' };
       const mockResponse = [{ id: 'message-1', content: 'Hello' }];
       chatsService.displayMessages.mockResolvedValue(mockResponse);

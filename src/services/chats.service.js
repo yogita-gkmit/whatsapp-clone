@@ -1,9 +1,8 @@
 const { Chat, User, UserChat, Message, sequelize } = require('../models');
-const { transporter, mailOptions } = require('../utils/email.util');
 const commonHelpers = require('../helpers/common.helper');
 const { reddis } = require('../config/redis');
 const { Op } = require('sequelize');
-
+const mail = require('../helpers/email.helper');
 const Cryptr = require('cryptr');
 const cryptr = new Cryptr('myTotallySecretKey', {
 	encoding: 'base64',
@@ -51,7 +50,6 @@ async function createGroup(payload, image, loggedInId) {
 	try {
 		const { name, description, type } = payload;
 		let { user_ids: userIds } = payload;
-		// userIds = JSON.parse(userIds);
 		const chat = await Chat.create({ name, description, type, image });
 		if (!chat) {
 			throw commonHelpers.customError('Chat does not exist', 404);
@@ -92,17 +90,25 @@ async function find(chatId, id) {
 	if (!chat) {
 		throw commonHelpers.customError('Chat does not exist', 404);
 	}
+
 	if (chat.type === 'group') {
 		return chat;
 	} else {
 		const userIds = await UserChat.findAll({ chat_id: chatId });
-
+		let flag = false;
 		let otherUser;
 		userIds.forEach(userId => {
+			if (id === userId.id) {
+				flag = true;
+			}
 			if (userId.id !== id) {
 				otherUser = userId;
 			}
 		});
+
+		if (flag === false) {
+			throw commonHelpers.customError('User does not exist in chat', 403);
+		}
 
 		const user = await User.findByPk(otherUser.user_id);
 
@@ -156,12 +162,9 @@ async function remove(chatId, id) {
 
 	try {
 		const chat = await Chat.findByPk(chatId);
-		if (!chat) throw commonHelpers.customError('Chat does not exist', 404);
-		if (chat.type === 'one-to-one')
-			throw commonHelpers.customError(
-				'Can not delete one to one conversation',
-				400,
-			);
+		if (!chat) {
+			throw commonHelpers.customError('Chat does not exist', 404);
+		}
 
 		const usersChat = await UserChat.findOne({
 			where: { user_id: id, chat_id: chatId },
@@ -192,13 +195,15 @@ async function editrole(chatId, id, payload) {
 	try {
 		const { user_ids: userIds } = payload;
 		const chat = await Chat.findByPk(chatId);
-		if (!chat) throw commonHelpers.customError('Chat does not exist', 404);
-		if (chat.type === 'one-to-one')
+		if (!chat) {
+			throw commonHelpers.customError('Chat does not exist', 404);
+		}
+		if (chat.type === 'one-to-one') {
 			throw commonHelpers.customError(
 				'Not applicable for one to one conversation',
 				400,
 			);
-
+		}
 		const usersChat = await UserChat.findOne({
 			where: { user_id: id, chat_id: chatId },
 		});
@@ -249,39 +254,26 @@ async function invite(chatId, id, payload) {
 	}
 	const user = await User.findByPk(userId);
 
-	if (!user) throw commonHelpers.customError('User does not exist', 404);
+	if (!user) {
+		throw commonHelpers.customError('User does not exist', 404);
+	}
 	const token = cryptr.encrypt(userId);
 	await reddis.set(userId, token, 'ex', 60 * 60 * 24);
-
-	const mailOptions = {
-		from: process.env.MAIL_USER,
-		to: user.email,
-		subject: `Email invite to be in ${chat.name} group`,
-		text: `Join ${chat.name} by accepting the url below.
-		http://localhost:5000/joingroup/:${chatId}?${token}`,
-	};
-
-	await transporter.sendMail(mailOptions, (error, info) => {
-		if (error) {
-			console.error(error);
-			throw commonHelpers.customError('Error sending mail', 400);
-		} else {
-			console.log('Email sent: ' + info.response);
-		}
-	});
+	const name = chat.name;
+	const email = user.email;
+	await mail.invite(name, token, email, chatId);
 
 	// TO REMOVE: token (temporary)
 	return token;
 }
 
-async function addUser(chatId, id, payload) {
+async function addUser(chatId, id, token) {
 	const transaction = await sequelize.transaction();
 
 	try {
-		const { token } = payload;
 		const decoded = cryptr.decrypt(token);
 		const inviteToken = await reddis.get(id);
-		console.log('invite token', inviteToken);
+
 		if (!inviteToken) {
 			throw commonHelpers.customError('Token expired or invalid', 400);
 		}
@@ -295,13 +287,15 @@ async function addUser(chatId, id, payload) {
 		}
 
 		const chat = await Chat.findByPk(chatId);
-		if (!chat) throw commonHelpers.customError('Chat does not exist', 404);
-		if (chat.type === 'one-to-one')
+		if (!chat) {
+			throw commonHelpers.customError('Chat does not exist', 404);
+		}
+		if (chat.type === 'one-to-one') {
 			throw commonHelpers.customError(
 				'Not applicable for one to one conversation',
 				400,
 			);
-
+		}
 		const response = await UserChat.create(
 			{
 				chat_id: chatId,
@@ -313,6 +307,7 @@ async function addUser(chatId, id, payload) {
 			},
 		);
 		await transaction.commit();
+		console.log('>>>>>>>>>>>response', response);
 		return response;
 	} catch (error) {
 		await transaction.rollback();
@@ -325,14 +320,16 @@ async function removeUser(id, chatId, userId) {
 
 	try {
 		const chat = await Chat.findByPk(chatId);
-		if (!chat) throw commonHelpers.customError('Chat does not exist', 404);
+		if (!chat) {
+			throw commonHelpers.customError('Chat does not exist', 404);
+		}
 
-		if (chat.type === 'one-to-one')
+		if (chat.type === 'one-to-one') {
 			throw commonHelpers.customError(
 				'Not applicable for one to one conversation',
 				400,
 			);
-
+		}
 		const usersChat = await UserChat.findOne({
 			where: { chat_id: chatId, user_id: id },
 		});
@@ -404,7 +401,7 @@ async function createMessage(chatId, id, payload, media) {
 	}
 }
 
-async function editMessage(chatId, messageId, id, payload, media) {
+async function editMessage(chatId, messageId, id, payload) {
 	const transaction = await sequelize.transaction();
 
 	try {
@@ -420,10 +417,10 @@ async function editMessage(chatId, messageId, id, payload, media) {
 		if (lastMessage.id !== messageId) {
 			throw commonHelpers.customError('user can not edit this message', 403);
 		}
+
 		const [updateRowCount, updatedMessage] = await Message.update(
 			{
 				message: message,
-				media: media,
 			},
 			{
 				where: {
@@ -437,9 +434,11 @@ async function editMessage(chatId, messageId, id, payload, media) {
 				transaction,
 			},
 		);
+
 		if (updateRowCount === 0) {
 			throw commonHelpers.customError('Message not found', 404);
 		}
+
 		await transaction.commit();
 		return updatedMessage;
 	} catch (error) {
