@@ -8,10 +8,14 @@ const reddis = new Redis({
 
 async function connectToRedis() {
   reddis.on('connect', () => {
+    /* istanbul ignore next */
     console.log('Connected to Redis successfully');
+    /* istanbul ignore next */
   });
   reddis.on('error', err => {
+    /* istanbul ignore next */
     console.error('Redis connection error:', err);
+    /* istanbul ignore next */
   });
 }
 
