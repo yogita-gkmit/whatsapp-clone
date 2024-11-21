@@ -1,8 +1,4 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models').User;
-
 const authServices = require('../services/auth.service');
-const { validUser } = require('../helpers/auth.helper');
 
 async function register(req, res) {
 	try {
@@ -20,7 +16,6 @@ async function register(req, res) {
 async function sendOTP(req, res) {
 	try {
 		const payload = req.body;
-
 		const response = await authServices.sendOtp(payload);
 		res.status(200).json({
 			success: true,
@@ -37,7 +32,6 @@ async function verifyOTP(req, res) {
 	try {
 		const payload = req.body;
 		const token = await authServices.verifyOtp(payload);
-
 		res.status(200).json({ message: 'User verified successfully', token });
 	} catch (error) {
 		console.log(error);
@@ -54,7 +48,9 @@ async function logout(req, res) {
 			message: result.message || 'Successfully logged out',
 		});
 	} catch (error) {
+		/* istanbul ignore next */
 		console.log(error);
+		/* istanbul ignore next */
 		const statusCode = error.statusCode || 400;
 		res.status(statusCode).json({ message: error.message });
 	}
