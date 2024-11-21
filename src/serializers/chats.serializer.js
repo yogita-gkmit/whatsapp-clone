@@ -8,6 +8,8 @@ async function createChat(req, res, next) {
 			description: item.description,
 			image: item.image,
 			type: item.type,
+			createdAt: item.created_at,
+			updatedAt: item.updated_at,
 		}));
 		res.data = { message: 'Operation successful', data: resultData };
 	} else if (receivedData && typeof receivedData === 'object') {
@@ -17,6 +19,8 @@ async function createChat(req, res, next) {
 			description: receivedData.description || '',
 			type: receivedData.type || 'one-to-one',
 			image: receivedData.image || null,
+			createdAt: receivedData.created_at,
+			updatedAt: receivedData.updated_at,
 		};
 		res.data = { message: 'Operation successful', data: resultData };
 	}
@@ -31,15 +35,12 @@ async function getChat(req, res, next) {
 	let result;
 	if (chatData.type === 'group') {
 		result = {
-			chat: {
-				id: chatData.id,
-				name: chatData.name,
-				type: chatData.type,
-				description: chatData.description,
-				createdAt: chatData.created_at,
-				updatedAt: chatData.updated_at,
-			},
-			user: null, // No single user needed for group chat
+			id: chatData.id,
+			name: chatData.name,
+			type: chatData.type,
+			description: chatData.description,
+			createdAt: chatData.created_at,
+			updatedAt: chatData.updated_at,
 		};
 	} else {
 		result = {
@@ -47,6 +48,8 @@ async function getChat(req, res, next) {
 			name: chatData.user.name,
 			email: chatData.user.email,
 			image: chatData.user.image || null,
+			createdAt: chatData.created_at,
+			updatedAt: chatData.updated_at,
 		};
 	}
 
@@ -64,15 +67,16 @@ async function createMessage(req, res, next) {
 		senderId: receivedData.senderId,
 		chatId: receivedData.chatId,
 		timestamp: receivedData.timestamp,
+		createdAt: receivedData.created_at,
+		updatedAt: receivedData.updated_at,
 	};
 
-	res.data = { message: 'Message created successfully', data: resultData };
+	res.data = { message: 'Message created successfully', data: resultData.data };
 	next();
 }
 
 async function editMessage(req, res, next) {
 	const receivedData = res.data || {};
-	console.log('>>>>>>>>>>>>>>>>>>', receivedData);
 	const resultData = {
 		id: receivedData.id,
 		message: receivedData.message,
@@ -80,16 +84,21 @@ async function editMessage(req, res, next) {
 		senderId: receivedData.senderId,
 		chatId: receivedData.chatId,
 		timestamp: receivedData.timestamp,
+		createdAt: receivedData.created_at,
+		updatedAt: receivedData.updated_at,
 	};
 
-	res.data = { message: 'Message edited successfully', data: resultData };
+	res.data = { message: 'Message edited successfully', data: resultData.data };
 	next();
 }
 
 async function deleteMessage(req, res, next) {
 	const receivedData = res.data || {};
 
-	res.data = { message: 'Message deleted successfully', data: receivedData };
+	res.data = {
+		message: 'Message deleted successfully',
+		data: receivedData.data,
+	};
 	next();
 }
 
@@ -101,48 +110,60 @@ async function addUser(req, res, next) {
 		chatId: receivedData.chat_id,
 		userID: receivedData.user_id,
 		isAdmin: receivedData.is_admin || 'member',
+		createdAt: receivedData.created_at,
+		updatedAt: receivedData.updated_at,
 	};
 
-	res.data = { message: 'User(s) added successfully', data: resultData };
+	res.data = { message: 'Users added successfully', data: resultData };
 	next();
 }
 
 async function removeUser(req, res, next) {
 	const receivedData = res.data || {};
 
-	res.data = { message: 'User removed successfully', data: receivedData };
+	res.data = { message: 'User removed successfully', data: receivedData.data };
 	next();
 }
 
 async function editChat(req, res, next) {
 	const receivedData = res.data || {};
-	console.log(receivedData[1][0]);
+	console.log(receivedData);
 	const resultData = {
-		id: receivedData[1][0].id,
-		name: receivedData[1][0].name,
-		description: receivedData[1][0].description || '',
-		type: receivedData[1][0].type || 'one-to-one',
-		image: receivedData[1][0].image || null,
-		updatedAt: receivedData[1][0].updated_at || '',
+		id: receivedData.id,
+		name: receivedData.name,
+		description: receivedData.description || '',
+		type: receivedData.type || 'one-to-one',
+		image: receivedData.image || null,
+		createdAt: receivedData.created_at,
+		updatedAt: receivedData.updated_at,
 	};
 
-	res.data = { message: 'Chat updated successfully', data: resultData };
+	res.data = { message: 'Chat updated successfully' };
 	next();
 }
 
 async function deleteChat(req, res, next) {
 	const receivedData = res.data || {};
 
-	res.data = { message: 'Chat deleted successfully', data: receivedData };
+	res.data = { data: receivedData };
 	next();
 }
 
 async function editAdmin(req, res, next) {
 	const receivedData = res.data || {};
-
+	console.log('admin data', receivedData[1]);
+	const data = receivedData[1][0];
+	const resultData = {
+		id: data.id,
+		userId: data.user_id,
+		chatId: data.chat_id,
+		isAdmin: data.is_admin,
+		createdAt: data.created_at,
+		updatedAt: data.updated_at,
+	};
 	res.data = {
 		message: 'Admin role updated successfully',
-		data: receivedData,
+		data: resultData,
 	};
 	next();
 }
@@ -156,13 +177,13 @@ async function emailInvite(req, res, next) {
 
 async function displayMessages(req, res, next) {
 	const receivedData = res.data || [];
-	console.log('>>>>>>>>>>>>>>>>>>>', receivedData);
 	const resultData = receivedData.map(message => ({
 		id: message.id,
 		message: message.message,
 		media: message.media || null,
 		userId: message.user_id,
-		createdAt: message.created_at,
+		createdAt: receivedData.created_at,
+		updatedAt: receivedData.updated_at,
 		chatId: message.chat_id,
 	}));
 

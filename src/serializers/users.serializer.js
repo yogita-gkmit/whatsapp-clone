@@ -5,6 +5,8 @@ async function users(req, res, next) {
 		name: user.name,
 		about: user.about,
 		image: user.image,
+		createdAt: user.created_at,
+		updatedAt: user.updated_at,
 	}));
 	res.data = resultData;
 	next();
@@ -22,6 +24,8 @@ async function myProfile(req, res, next) {
 			email: receivedData.user.email,
 			image: receivedData.user.image,
 			about: receivedData.user.about,
+			createdAt: receivedData.created_at,
+			updatedAt: receivedData.updated_at,
 		};
 	}
 	res.data = resultData;
@@ -42,6 +46,8 @@ async function editProfile(req, res, next) {
 			email: user.email,
 			image: user.image,
 			about: user.about,
+			createdAt: user.created_at,
+			updatedAt: user.updated_at,
 		};
 	}
 
@@ -62,6 +68,8 @@ async function inbox(req, res, next) {
 				type: userChat.type,
 				lastMessage: userChat.last_message,
 				lastMedia: userChat.last_media,
+				createdAt: userChat.created_at,
+				updatedAt: userChat.updated_at,
 			};
 		} else {
 			return {
@@ -72,6 +80,8 @@ async function inbox(req, res, next) {
 				userName: userChat.user_name,
 				userImage: userChat.user_image,
 				userAbout: userChat.user_about,
+				createdAt: userChat.created_at,
+				updatedAt: userChat.updated_at,
 			};
 		}
 	});
