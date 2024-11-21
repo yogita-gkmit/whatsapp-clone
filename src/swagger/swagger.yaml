@@ -6,13 +6,13 @@ servers:
   - url: http://localhost:3000
 components:
   securitySchemes:
-    jwtAuth:
+    apikeyAuth:
       type: apiKey
       in: header
-      name: X-API-KEY # The header name where the JWT token will be passed
+      name: Authorization
 
 security:
-  - jwtAuth: [] # Apply JWT authentication globally (if needed)
+  - apikeyAuth: []
 
 tags:
   - name: auth
@@ -70,6 +70,8 @@ paths:
             schema:
               type: object
               example: ''
+      security:
+        - apikeyAuth: []
       responses:
         '200':
           description: Successful response
@@ -111,19 +113,16 @@ paths:
         - user
       summary: display logged in user
       security:
-        - jwtAuth: [] # This route requires JWT token
+        - apikeyAuth: []
       responses:
         '200':
           description: Successful response
           content:
             application/json: {}
-
     put:
       tags:
         - user
       summary: edit logged in user's profile
-      security:
-        - jwtAuth: [] # This route requires JWT token
       requestBody:
         content:
           multipart/form-data:
@@ -142,6 +141,8 @@ paths:
                 email:
                   type: string
                   example: jyotideveda02@gmail.com
+      security:
+        - apikeyAuth: []
       responses:
         '200':
           description: Successful response
@@ -160,6 +161,8 @@ paths:
             type: string
           required: true
           example: c714c421-77c2-4998-998a-fd831457f3da
+      security:
+        - apikeyAuth: []
       responses:
         '200':
           description: Successful response
@@ -171,6 +174,8 @@ paths:
       tags:
         - user
       summary: show contacts
+      security:
+        - apikeyAuth: []
       responses:
         '200':
           description: Successful response
@@ -194,6 +199,8 @@ paths:
             type: string
           required: true
           example: 473dfa3c-488b-4d44-9c96-4d03ced5e098
+      security:
+        - apikeyAuth: []
       responses:
         '200':
           description: Successful response
@@ -219,7 +226,9 @@ paths:
           schema:
             type: string
           required: true
-          example: '{{chatid}}'
+          example: 'd6e1d292-6ba1-4156-9798-7ccd13535ef8'
+      security:
+        - apikeyAuth: []
       responses:
         '200':
           description: Successful response
@@ -244,7 +253,9 @@ paths:
           schema:
             type: string
           required: true
-          example: '{{chatid}}'
+          example: 'd6e1d292-6ba1-4156-9798-7ccd13535ef8'
+      security:
+        - apikeyAuth: []
       responses:
         '200':
           description: Successful response
@@ -268,7 +279,9 @@ paths:
           schema:
             type: string
           required: true
-          example: '{{chatid}}'
+          example: 'd6e1d292-6ba1-4156-9798-7ccd13535ef8'
+      security:
+        - apikeyAuth: []
       responses:
         '200':
           description: Successful response
@@ -286,13 +299,15 @@ paths:
           schema:
             type: string
           required: true
-          example: '{{chatid}}'
+          example: 'd6e1d292-6ba1-4156-9798-7ccd13535ef8'
         - name: userId
           in: path
           schema:
             type: string
           required: true
           example: 621b82fc-a437-45d6-b8d7-29ea1570ca3b
+      security:
+        - apikeyAuth: []
       responses:
         '200':
           description: Successful response
@@ -322,13 +337,14 @@ paths:
           schema:
             type: string
           required: true
-          example: '{{chatid}}'
+          example: 'd6e1d292-6ba1-4156-9798-7ccd13535ef8'
+      security:
+        - apikeyAuth: []
       responses:
         '200':
           description: Successful response
           content:
             application/json: {}
-
     get:
       tags:
         - chat > message
@@ -344,164 +360,9 @@ paths:
           schema:
             type: string
           required: true
-          example: '{{chatid}}'
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json: {}
-
-  /api/chats/{id}/messages/{messageId}:
-    put:
-      tags:
-        - chat > message
-      summary: edit message (last message only)
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                message:
-                  type: string
-                  example: yooo broo whatsApppppppp (supppp),
-                media:
-                  type: string
-                  format: binary
-      parameters:
-        - name: id
-          in: path
-          schema:
-            type: string
-          required: true
-          example: '{{chatid}}'
-        - name: messageId
-          in: path
-          schema:
-            type: string
-          required: true
-          example: c2584211-8733-411c-accb-9f4091a41b1e
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json: {}
-
-    delete:
-      tags:
-        - chat > message
-      summary: to delete last sent message
-      parameters:
-        - name: id
-          in: path
-          schema:
-            type: string
-          required: true
-          example: bc798efb-25b9-44fe-b08e-073c7d60bf1b
-        - name: messageId
-          in: path
-          schema:
-            type: string
-          required: true
-          example: c2584211-8733-411c-accb-9f4091a41b1e
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json: {}
-
-  /api/chats:
-    post:
-      tags:
-        - chat
-      summary: create chat group
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  example: single genius
-                description:
-                  type: string
-                  example: single ladies are genius
-                type:
-                  type: string
-                  example: group
-                image:
-                  type: string
-                  format: binary
-                user_ids:
-                  type: string
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json: {}
-
-  /api/chats/{id}:
-    get:
-      tags:
-        - chat
-      summary: get chat one-to-one chat information
-      parameters:
-        - name: id
-          in: path
-          schema:
-            type: string
-          required: true
-          example: '{{chatid}}'
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json: {}
-
-    put:
-      tags:
-        - chat
-      summary: to check one to one for edit
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                description:
-                  type: string
-                  example: hey there!!!
-                image:
-                  type: string
-                  format: binary
-                name:
-                  type: string
-                  example: new
-      parameters:
-        - name: id
-          in: path
-          schema:
-            type: string
-          required: true
-          example: '{{chatid}}'
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json: {}
-
-    delete:
-      tags:
-        - chat
-      summary: to check one to one to delete
-      parameters:
-        - name: id
-          in: path
-          schema:
-            type: string
-          required: true
-          example: bc798efb-25b9-44fe-b08e-073c7d60bf1b
+          example: 'd6e1d292-6ba1-4156-9798-7ccd13535ef8'
+      security:
+        - apikeyAuth: []
       responses:
         '200':
           description: Successful response
