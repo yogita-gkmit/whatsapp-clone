@@ -1,13 +1,12 @@
-const { User, UserChat, Message } = require('../models');
-
+const { User, sequelize } = require('../models');
 const { Op } = require('sequelize');
-const { sequelize } = require('../models');
 const commonHelpers = require('../helpers/common.helper');
 
 async function profile(id) {
 	const user = await User.findByPk(id);
-	if (!user) throw commonHelpers.customError('User Not Found', 404);
-
+	if (!user) {
+		throw commonHelpers.customError('User Not Found', 404);
+	}
 	return {
 		user: {
 			id: user.id,
@@ -28,7 +27,9 @@ async function editProfile(id, image, payload) {
 		const { name, email, about } = payload;
 		const user = await User.findByPk(id);
 
-		if (!user) throw commonHelpers.customError('user does not exist', 404);
+		if (!user) {
+			throw commonHelpers.customError('user does not exist', 404);
+		}
 
 		const response = await User.update(
 			{ image: image, name: name, email: email, about: about },
@@ -38,7 +39,7 @@ async function editProfile(id, image, payload) {
 			},
 			{ transaction },
 		);
-		console.log('response', response);
+
 		await transaction.commit();
 		return response;
 	} catch (error) {
@@ -49,7 +50,9 @@ async function editProfile(id, image, payload) {
 
 async function users(id, page = 0) {
 	const user = await User.findByPk(id);
-	if (!user) throw commonHelpers.customError('user does not exist', 404);
+	if (!user) {
+		throw commonHelpers.customError('user does not exist', 404);
+	}
 
 	const limit = 10;
 	const offset = limit * page;
@@ -61,84 +64,81 @@ async function users(id, page = 0) {
 		limit: limit,
 	});
 
-	console.log('allUsers', allUsers);
 	return allUsers;
 }
 
 async function inbox(id, loggedInId, page = 0) {
 	const user = await User.findByPk(id);
-	if (!user) throw commonHelpers.customError('user does not exist', 404);
+	if (!user) {
+		throw commonHelpers.customError('user does not exist', 404);
+	}
 	if (id !== loggedInId) {
 		throw commonHelpers.customError('Invalid user', 400);
 	}
 	const limit = 10;
 	const offset = limit * page;
 
-	// const otherUser = await UserChat.findAll({
-	// 	where: { user_id: id },
-	// });
-
 	const [results, metadata] = await sequelize.query(
 		`
+		SELECT
+		c.id AS chat_id,
+		c.name AS chat_name,
+		c.description,
+		c.image AS chat_image,
+		c.type,
+		lm.message AS last_message,
+		lm.media AS last_media,
+		lm.created_at AS last_message_created_at,
 
-SELECT
-c.id AS chat_id,
-c.name AS chat_name,
-c.description,
-c.image AS chat_image,
-c.type,
-lm.message AS last_message,
-lm.media AS last_media,
-lm.created_at AS last_message_created_at,
+		CASE
+    		WHEN c.type = 'one-to-one'
+    		THEN (SELECT u.name FROM users u WHERE u.id = uc.user_id)
+    		ELSE NULL
+		END AS user_name,
 
-CASE
-    WHEN c.type = 'one-to-one'
-    THEN (SELECT u.name FROM users u WHERE u.id = uc.user_id)
-    ELSE NULL
-END AS user_name,
+		CASE
+    		WHEN c.type = 'one-to-one'
+    		THEN (SELECT u.image FROM users u WHERE u.id = uc.user_id)
+    		ELSE NULL
+		END AS user_image,
 
-CASE
-    WHEN c.type = 'one-to-one'
-    THEN (SELECT u.image FROM users u WHERE u.id = uc.user_id)
-    ELSE NULL
-END AS user_image,
+		CASE
+    		WHEN c.type = 'one-to-one'
+    		THEN (SELECT u.about FROM users u WHERE u.id = uc.user_id)
+    		ELSE NULL
+		END AS user_about
 
-CASE
-    WHEN c.type = 'one-to-one'
-    THEN (SELECT u.about FROM users u WHERE u.id = uc.user_id)
-    ELSE NULL
-END AS user_about
-
-FROM
-users_chats uc
-INNER JOIN
-chats c ON uc.chat_id = c.id
-LEFT JOIN (
-SELECT
-    m1.chat_id,
-    m1.message,
-    m1.media,
-    m1.created_at
-FROM
-    messages m1
-INNER JOIN (
-    SELECT
-        chat_id,
-        MAX(created_at) AS latest_message_time
-    FROM
-        messages
-    GROUP BY
-        chat_id
-) m2 ON m1.chat_id = m2.chat_id AND m1.created_at = m2.latest_message_time
-) lm ON c.id = lm.chat_id
-WHERE
-uc.user_id = :id
-GROUP BY
-c.id, uc.user_id, lm.message, lm.media, lm.created_at
-ORDER BY
-last_message_created_at DESC
-OFFSET :offset
-LIMIT :limit;`,
+		FROM
+		users_chats uc
+		INNER JOIN
+		chats c ON uc.chat_id = c.id
+		LEFT JOIN (
+		SELECT
+    		m1.chat_id,
+    		m1.message,
+    		m1.media,
+    	m1.created_at
+		FROM
+		    messages m1
+		INNER JOIN (
+		    SELECT
+		        chat_id,
+		        MAX(created_at) AS latest_message_time
+		    FROM
+		        messages
+		    GROUP BY
+		        chat_id
+		) m2 ON m1.chat_id = m2.chat_id AND m1.created_at = m2.latest_message_time
+		) lm ON c.id = lm.chat_id
+		WHERE
+		uc.user_id = :id
+		GROUP BY
+		c.id, uc.user_id, lm.message, lm.media, lm.created_at
+		ORDER BY
+		last_message_created_at DESC
+		OFFSET :offset
+		LIMIT :limit;
+`,
 		{
 			replacements: { id, offset, limit },
 		},

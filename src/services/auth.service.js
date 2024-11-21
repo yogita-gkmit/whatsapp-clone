@@ -1,10 +1,9 @@
 const User = require('../models').User;
-const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const otpGenerator = require('otp-generator');
 const { reddis } = require('../config/redis');
 const { sequelize } = require('../models');
-const { transporter, mailOptions } = require('../utils/email.util');
+const mail = require('../helpers/email.helper');
 const { validUser } = require('../helpers/auth.helper');
 const { addTokenToBlacklist } = require('../helpers/redis.helper');
 const commonHelpers = require('../helpers/common.helper');
@@ -18,7 +17,6 @@ async function generateOtp() {
 		lowerCaseAlphabets: false,
 		specialChars: false,
 	});
-
 	return otp;
 }
 
@@ -31,30 +29,16 @@ async function sendOtp(payload) {
 	await reddis.set(email, otp, 'ex', 300);
 
 	const storedOTP = await reddis.get(email);
-
-	const mailOptions = {
-		from: process.env.MAIL_USER,
-		to: email,
-		subject: 'OTP for Registration',
-		text: `Your OTP is ${otp}. It expires in 5 minutes.`,
-	};
-	await transporter.sendMail(mailOptions, (error, info) => {
-		if (error) {
-			console.error(error);
-			throw commonHelpers.customError('Error sending mail', 400);
-		} else {
-			console.log('Email sent: ' + info.response);
-		}
-	});
+	await mail.sendOtp(otp, email);
 	return { message: 'otp sent successfully', otp };
 }
 
 async function verifyOtp(payload) {
 	const { email, otp } = payload;
-	if (!(await validUser(email))) {
+	const user = await User.findOne({ where: { email: email } });
+	if (!user) {
 		throw commonHelpers.customError('User is not registered', 404);
 	}
-	const user = await User.findOne({ where: { email: email } });
 
 	const storedOTP = await reddis.get(email);
 
