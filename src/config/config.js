@@ -19,7 +19,7 @@ module.exports = {
   test: {
     username: process.env.USERNAME,
     password: process.env.PASSWORD,
-    database: process.env.DATABASE,
+    database: process.env.DATABASE_TEST,
     host: process.env.HOST,
     dialect: 'postgres',
     define: {

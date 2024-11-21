@@ -21,13 +21,17 @@ async function generateOtp() {
 
 	return otp;
 }
+
 async function sendOtp(payload) {
+	
 	const { email } = payload;
 	if (!(await validUser(email))) {
 		throw commonHelpers.customError('User is not registered', 404);
 	}
 	const otp = await generateOtp();
-	await reddis.set(email, otp, 'ex', 500);
+	await reddis.set(email, otp, 'ex', 300);
+
+	const storedOTP = await reddis.get(email);
 
 	const mailOptions = {
 		from: process.env.MAIL_USER,
@@ -47,21 +51,26 @@ async function sendOtp(payload) {
 }
 
 async function verifyOtp(payload) {
+	
 	const { email, otp } = payload;
 	if (!(await validUser(email))) {
-		return { message: 'User is not registered' };
+		throw commonHelpers.customError('User is not registered', 404);
 	}
 	const user = await User.findOne({ where: { email: email } });
 
+	
+
 	const storedOTP = await reddis.get(email);
 
+
 	if (!(storedOTP == otp)) {
-		return { message: 'OTP did not matched' };
+		throw commonHelpers.customError('OTP did not match', 400);
 	}
 	reddis.del(email);
 	const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
-		expiresIn: '1h',
+		expiresIn: '170h',
 	});
+
 
 	return token;
 }
