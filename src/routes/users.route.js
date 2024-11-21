@@ -14,21 +14,21 @@ router.get(
 	authMiddleware,
 	usersController.users,
 	usersSerializer.users,
-	responseHandler.response,
+	responseHandler.userResponse,
 );
 router.get(
 	'/me',
 	authMiddleware,
 	usersController.myProfile,
 	usersSerializer.myProfile,
-	responseHandler.response,
+	responseHandler.userResponse,
 );
 router.get(
 	'/:id',
 	authMiddleware,
 	usersController.specificProfile,
 	usersSerializer.myProfile,
-	responseHandler.response,
+	responseHandler.userResponse,
 );
 
 router.put(
@@ -38,7 +38,7 @@ router.put(
 	validate(userValidator.editProfileSchema),
 	usersController.editMyProfile,
 	usersSerializer.editProfile,
-	responseHandler.response,
+	responseHandler.userResponse,
 );
 
 // TO INBOX:
@@ -49,7 +49,7 @@ router.get(
 	validate(userValidator.queryPageSchema, false, true),
 	usersController.inbox,
 	usersSerializer.inbox,
-	responseHandler.response,
+	responseHandler.userResponse,
 );
 
 module.exports = router;
