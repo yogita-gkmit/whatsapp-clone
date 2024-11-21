@@ -57,7 +57,7 @@ async function editProfile(req, res, next) {
 
 async function inbox(req, res, next) {
 	const receivedData = res.data || [];
-
+	console.log(res.data);
 	const resultData = receivedData.results.map(userChat => {
 		if (userChat.type === 'group') {
 			return {
@@ -85,6 +85,7 @@ async function inbox(req, res, next) {
 			};
 		}
 	});
+	console.log(resultData);
 	res.data = resultData;
 	next();
 }
