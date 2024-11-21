@@ -60,6 +60,7 @@ async function users(id, page = 0) {
 		limit: limit,
 	});
 
+	console.log('allUsers', allUsers);
 	return allUsers;
 }
 
@@ -72,60 +73,75 @@ async function inbox(id, loggedInId, page = 0) {
 	const limit = 10;
 	const offset = limit * page;
 
-	// const userChat = await UserChat.findAll({ where: { user_id: id } });
-	// const chatIds = userChat.map(item => item.chat_id);
-
-	// const lastMessage = await Message.findAll({
-	// 	where: { chat_id: { [Op.in]: chatIds } },
-	// 	order: [['created_at', 'DESC']],
-	// 	// limit: 1,
+	// const otherUser = await UserChat.findAll({
+	// 	where: { user_id: id },
 	// });
 
-	// console.log(lastMessage);
 	const [results, metadata] = await sequelize.query(
-		`SELECT
-	    c.id AS chat_id,
-	    c.name AS chat_name,
-	    c.description,
-	    c.image AS chat_image,
-	    c.type,
-	    lm.message AS last_message,
-	    lm.media AS last_media,
-	    lm.created_at AS last_message_created_at
-	FROM
-	    users_chats uc
-	INNER JOIN
-	    chats c ON uc.chat_id = c.id
-	LEFT JOIN (
-	    SELECT
-	        m1.chat_id,
-	        m1.message,
-	        m1.media,
-	        m1.created_at
-	    FROM
-	        messages m1
-	    INNER JOIN (
-	        SELECT
-	            chat_id,
-	            MAX(created_at) AS latest_message_time
-	        FROM
-	            messages
-	        GROUP BY
-	            chat_id
-	    ) m2 ON m1.chat_id = m2.chat_id AND m1.created_at = m2.latest_message_time
-	) lm ON c.id = lm.chat_id
-	WHERE
-	    uc.user_id = :id
-	GROUP BY
-	    c.id, uc.user_id, lm.message, lm.media, lm.created_at
-	ORDER BY last_message_created_at DESC
-	OFFSET :offset
-	LIMIT :limit;`,
+		`
+
+SELECT
+c.id AS chat_id,
+c.name AS chat_name,
+c.description,
+c.image AS chat_image,
+c.type,
+lm.message AS last_message,
+lm.media AS last_media,
+lm.created_at AS last_message_created_at,
+
+CASE
+    WHEN c.type = 'one-to-one'
+    THEN (SELECT u.name FROM users u WHERE u.id = uc.user_id)
+    ELSE NULL
+END AS user_name,
+
+CASE
+    WHEN c.type = 'one-to-one'
+    THEN (SELECT u.image FROM users u WHERE u.id = uc.user_id)
+    ELSE NULL
+END AS user_image,
+
+CASE
+    WHEN c.type = 'one-to-one'
+    THEN (SELECT u.about FROM users u WHERE u.id = uc.user_id)
+    ELSE NULL
+END AS user_about
+
+FROM
+users_chats uc
+INNER JOIN
+chats c ON uc.chat_id = c.id
+LEFT JOIN (
+SELECT
+    m1.chat_id,
+    m1.message,
+    m1.media,
+    m1.created_at
+FROM
+    messages m1
+INNER JOIN (
+    SELECT
+        chat_id,
+        MAX(created_at) AS latest_message_time
+    FROM
+        messages
+    GROUP BY
+        chat_id
+) m2 ON m1.chat_id = m2.chat_id AND m1.created_at = m2.latest_message_time
+) lm ON c.id = lm.chat_id
+WHERE
+uc.user_id = :id
+GROUP BY
+c.id, uc.user_id, lm.message, lm.media, lm.created_at
+ORDER BY
+last_message_created_at DESC
+OFFSET :offset
+LIMIT :limit;`,
 		{
 			replacements: { id, offset, limit },
 		},
 	);
-
 	return { results };
 }
 

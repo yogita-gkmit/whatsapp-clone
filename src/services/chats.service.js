@@ -16,6 +16,7 @@ async function createSingle(payload, loggedInId) {
 
 	try {
 		const { type, user_ids: userIds } = payload;
+		// console.log('****************************');
 
 		const userDetails = await User.findByPk(userIds[0]);
 
@@ -377,18 +378,24 @@ async function createMessage(chatId, id, payload, media) {
 		if (!usersChat) {
 			throw commonHelpers.customError('User not found in chat', 404);
 		}
+		let response;
 
-		const response = await Message.create(
-			{
-				user_id: id,
-				chat_id: chatId,
-				message: message,
-				media: media,
-			},
-			{
-				transaction,
-			},
-		);
+		if (message || media) {
+			response = await Message.create(
+				{
+					user_id: id,
+					chat_id: chatId,
+					message: message,
+					media: media,
+				},
+				{
+					transaction,
+				},
+			);
+		} else {
+			throw commonHelpers.customError('message should not be empty', 422);
+		}
+
 		await transaction.commit();
 		return response;
 	} catch (error) {
@@ -451,7 +458,12 @@ async function deleteMessage(chatId, messageId, id) {
 			limit: 1,
 			plain: true,
 		});
-		if (lastMessage.id !== messageId) {
+
+		if (!lastMessage || lastMessage.length === 0) {
+			throw commonHelpers.customError('Message not found', 404);
+		}
+
+		if (lastMessage[0]?.id !== messageId) {
 			throw commonHelpers.customError('user can not delete this message', 403);
 		}
 
@@ -460,6 +472,7 @@ async function deleteMessage(chatId, messageId, id) {
 			transaction,
 		});
 		await transaction.commit();
+		console.log('helloooooooo');
 		return 'message deleted successfully';
 	} catch (error) {
 		await transaction.rollback();
@@ -467,7 +480,7 @@ async function deleteMessage(chatId, messageId, id) {
 	}
 }
 
-async function displayMessages(chatId, id, page = 0) {
+async function displayMessages(chatId, id, page = 0, filter) {
 	if (!chatId) {
 		throw commonHelpers.customError('chat does not exist', 404);
 	}
@@ -482,12 +495,36 @@ async function displayMessages(chatId, id, page = 0) {
 
 	const limit = 10;
 	const offset = limit * page;
-
-	const message = await Message.findAll({
-		where: { chat_id: chatId },
-		offset: offset,
-		limit: limit,
-	});
+	let message;
+	if (filter === 'message') {
+		message = await Message.findAll({
+			where: {
+				chat_id: chatId,
+				message: {
+					[Op.like]: '%',
+				},
+			},
+			offset: offset,
+			limit: limit,
+		});
+	} else if (filter === 'media') {
+		message = await Message.findAll({
+			where: {
+				chat_id: chatId,
+				media: {
+					[Op.like]: '%',
+				},
+			},
+			offset: offset,
+			limit: limit,
+		});
+	} else {
+		message = await Message.findAll({
+			where: { chat_id: chatId },
+			offset: offset,
+			limit: limit,
+		});
+	}
 
 	return message;
 }
