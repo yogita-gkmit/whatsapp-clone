@@ -1,17 +1,17 @@
 const Joi = require('joi');
 
 const chatIdParamSchema = Joi.object({
-	chatId: Joi.string().uuid().required(),
+	id: Joi.string().uuid().required(),
 });
 
 const messageIdParamSchema = Joi.object({
 	messageId: Joi.string().uuid().required(),
-	chatId: Joi.string().uuid().required(),
+	id: Joi.string().uuid().required(),
 });
 
 const userIdParamSchema = Joi.object({
 	userId: Joi.string().uuid().required(),
-	chatId: Joi.string().uuid().required(),
+	id: Joi.string().uuid().required(),
 });
 
 const createChatBodySchema = Joi.object({

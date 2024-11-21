@@ -19,7 +19,7 @@ router.post(
 );
 
 router.get(
-	'/:chatId',
+	'/:id',
 	authMiddleware,
 	validate(chatValidator.chatIdParamSchema, true),
 	chatsController.getChat,
@@ -28,7 +28,7 @@ router.get(
 );
 
 router.put(
-	'/:chatId',
+	'/:id',
 	authMiddleware,
 	upload.single('image'),
 	validate(chatValidator.chatIdParamSchema, true),
@@ -39,7 +39,7 @@ router.put(
 );
 
 router.delete(
-	'/:chatId',
+	'/:id',
 	authMiddleware,
 	validate(chatValidator.chatIdParamSchema, true),
 	chatsController.deleteChat,
@@ -48,7 +48,7 @@ router.delete(
 );
 
 router.put(
-	'/:chatId/users',
+	'/:id/users',
 	authMiddleware,
 	validate(chatValidator.chatIdParamSchema, true),
 	validate(chatValidator.editRoleSchema),
@@ -58,7 +58,7 @@ router.put(
 );
 
 router.post(
-	'/:chatId/emailInvite',
+	'/:id/emailInvite',
 	authMiddleware,
 	validate(chatValidator.chatIdParamSchema, true),
 	validate(chatValidator.emailInviteBodySchema),
@@ -67,18 +67,18 @@ router.post(
 	responseHandler.response,
 );
 
-router.post(
-	'/:chatId/usersChats',
+router.get(
+	'/:id/usersChats',
 	authMiddleware,
 	validate(chatValidator.chatIdParamSchema, true),
-	validate(chatValidator.addUserBodySchema),
+	validate(chatValidator.addUserBodySchema, false, true),
 	chatsController.addUser,
 	chatsSerializer.addUser,
 	responseHandler.response,
 );
 
 router.delete(
-	'/:chatId/users/:userId',
+	'/:id/users/:userId',
 	authMiddleware,
 	validate(chatValidator.userIdParamSchema, true),
 	chatsController.removeUser,
@@ -86,8 +86,9 @@ router.delete(
 	responseHandler.response,
 );
 
+//////// start from here...........
 router.post(
-	'/:chatId/messages',
+	'/:id/messages',
 	authMiddleware,
 	upload.single('media'),
 	validate(chatValidator.chatIdParamSchema, true),
@@ -98,7 +99,7 @@ router.post(
 );
 
 router.put(
-	'/:chatId/messages/:messageId',
+	'/:id/messages/:messageId',
 	authMiddleware,
 	upload.single('media'),
 	validate(chatValidator.messageIdParamSchema, true),
@@ -109,7 +110,7 @@ router.put(
 );
 
 router.delete(
-	'/:chatId/messages/:messageId',
+	'/:id/messages/:messageId',
 	authMiddleware,
 	upload.single('media'),
 	validate(chatValidator.messageIdParamSchema, true),
@@ -119,7 +120,7 @@ router.delete(
 );
 
 router.get(
-	'/:chatId/messages',
+	'/:id/messages',
 	authMiddleware,
 	validate(chatValidator.chatIdParamSchema, true),
 	chatsController.displayMessages,

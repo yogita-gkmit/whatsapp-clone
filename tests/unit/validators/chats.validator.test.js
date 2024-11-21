@@ -16,7 +16,7 @@ const {
 describe('Validation Schemas Tests', () => {
   describe('chatIdParamSchema', () => {
     it('should pass when valid chatId is provided', () => {
-      const validData = { chatId: 'c1e4c3fc-4f8d-45f2-bf7b-c56f3aaf70f5' };
+      const validData = { id: 'c1e4c3fc-4f8d-45f2-bf7b-c56f3aaf70f5' };
       const { error } = chatIdParamSchema.validate(validData);
       expect(error).toBeUndefined();
     });
@@ -25,14 +25,14 @@ describe('Validation Schemas Tests', () => {
       const invalidData = {};
       const { error } = chatIdParamSchema.validate(invalidData);
       expect(error).toBeDefined();
-      expect(error.details[0].message).toBe('"chatId" is required');
+      expect(error.details[0].message).toBe('"id" is required');
     });
 
     it('should fail when chatId is invalid UUID', () => {
-      const invalidData = { chatId: 'invalid-chat-id' };
+      const invalidData = { id: 'invalid-chat-id' };
       const { error } = chatIdParamSchema.validate(invalidData);
       expect(error).toBeDefined();
-      expect(error.details[0].message).toBe('"chatId" must be a valid GUID');
+      expect(error.details[0].message).toBe('"id" must be a valid GUID');
     });
   });
 
@@ -40,7 +40,7 @@ describe('Validation Schemas Tests', () => {
     it('should pass when valid messageId and chatId are provided', () => {
       const validData = {
         messageId: 'c1e4c3fc-4f8d-45f2-bf7b-c56f3aaf70f5',
-        chatId: 'b1e4c3fc-4f8d-45f2-bf7b-c56f3aaf70f5',
+        id: 'b1e4c3fc-4f8d-45f2-bf7b-c56f3aaf70f5',
       };
       const { error } = messageIdParamSchema.validate(validData);
       expect(error).toBeUndefined();
@@ -50,13 +50,13 @@ describe('Validation Schemas Tests', () => {
       const invalidData = { messageId: 'c1e4c3fc-4f8d-45f2-bf7b-c56f3aaf70f5' };
       const { error } = messageIdParamSchema.validate(invalidData);
       expect(error).toBeDefined();
-      expect(error.details[0].message).toBe('"chatId" is required');
+      expect(error.details[0].message).toBe('"id" is required');
     });
 
     it('should fail when messageId or chatId are invalid UUIDs', () => {
       const invalidData = {
         messageId: 'invalid-message-id',
-        chatId: 'invalid-chat-id',
+        id: 'invalid-chat-id',
       };
       const { error } = messageIdParamSchema.validate(invalidData);
       expect(error).toBeDefined();
@@ -68,7 +68,7 @@ describe('Validation Schemas Tests', () => {
     it('should pass when valid userId and chatId are provided', () => {
       const validData = {
         userId: 'c1e4c3fc-4f8d-45f2-bf7b-c56f3aaf70f5',
-        chatId: 'b1e4c3fc-4f8d-45f2-bf7b-c56f3aaf70f5',
+        id: 'b1e4c3fc-4f8d-45f2-bf7b-c56f3aaf70f5',
       };
       const { error } = userIdParamSchema.validate(validData);
       expect(error).toBeUndefined();
@@ -78,13 +78,13 @@ describe('Validation Schemas Tests', () => {
       const invalidData = { userId: 'c1e4c3fc-4f8d-45f2-bf7b-c56f3aaf70f5' };
       const { error } = userIdParamSchema.validate(invalidData);
       expect(error).toBeDefined();
-      expect(error.details[0].message).toBe('"chatId" is required');
+      expect(error.details[0].message).toBe('"id" is required');
     });
 
     it('should fail when userId or chatId are invalid UUIDs', () => {
       const invalidData = {
         userId: 'invalid-user-id',
-        chatId: 'invalid-chat-id',
+        id: 'invalid-chat-id',
       };
       const { error } = userIdParamSchema.validate(invalidData);
       expect(error).toBeDefined();
