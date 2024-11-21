@@ -14,7 +14,6 @@ async function authMiddleware(req, res, next) {
 		if (isBlacklisted) {
 			throw commonHelpers.customError('Token is blacklisted', 401);
 		}
-		
 		const decoded = await verifyToken(token);
 		req.user = decoded;
 		next();

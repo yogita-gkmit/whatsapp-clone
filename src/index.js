@@ -16,7 +16,6 @@ app.use(express.urlencoded({ extended: true }));
 const startServer = async function () {
 	try {
 		await sequelize.authenticate();
-		await connectToRedis();
 		console.log('database connected');
 	} catch (err) {
 		console.log('Database connection failed', err);
@@ -24,6 +23,7 @@ const startServer = async function () {
 	}
 };
 startServer();
+connectToRedis();
 
 app.get('/health-check', (req, res) => {
 	try {
@@ -36,5 +36,3 @@ app.get('/health-check', (req, res) => {
 app.listen(PORT, () => {
 	console.log(`server running on port http://localhost:${PORT}`);
 });
-
-module.exports = app;
