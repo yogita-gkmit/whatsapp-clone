@@ -9,7 +9,6 @@ function validate(schema, params = false, query = false) {
 		} else {
 			result = schema.validate(req.body);
 		}
-
 		const { error } = result;
 
 		if (error) {

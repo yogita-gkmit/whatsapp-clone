@@ -16,7 +16,6 @@ async function createSingle(payload, loggedInId) {
 
 	try {
 		const { type, user_ids: userIds } = payload;
-		// console.log('****************************');
 
 		const userDetails = await User.findByPk(userIds[0]);
 
@@ -177,10 +176,10 @@ async function remove(chatId, id) {
 			transaction,
 		});
 
-		await chat.destroy();
+		const deleteCount = await chat.destroy();
 		await transaction.commit();
 
-		return 'Group deleted successfully';
+		return deleteCount;
 	} catch (error) {
 		await transaction.rollback();
 		throw error;
@@ -272,7 +271,7 @@ async function invite(chatId, id, payload) {
 	});
 
 	// TO REMOVE: token (temporary)
-	return `Mail sent successfully, token: ${token}`;
+	return token;
 }
 
 async function addUser(chatId, id, payload) {
@@ -282,7 +281,7 @@ async function addUser(chatId, id, payload) {
 		const { token } = payload;
 		const decoded = cryptr.decrypt(token);
 		const inviteToken = await reddis.get(id);
-
+		console.log('invite token', inviteToken);
 		if (!inviteToken) {
 			throw commonHelpers.customError('Token expired or invalid', 400);
 		}
@@ -344,11 +343,12 @@ async function removeUser(id, chatId, userId) {
 			throw commonHelpers.customError('User is not admin', 403);
 		}
 
-		await UserChat.destroy({
+		const deleteCount = await UserChat.destroy({
 			where: { chat_id: chatId, user_id: userId },
 			transaction,
 		});
 		await transaction.commit();
+		return deleteCount;
 	} catch (error) {
 		await transaction.rollback();
 		throw error;
@@ -456,7 +456,6 @@ async function deleteMessage(chatId, messageId, id) {
 			where: { chat_id: chatId, user_id: id },
 			order: [['created_at', 'DESC']],
 			limit: 1,
-			plain: true,
 		});
 
 		if (!lastMessage || lastMessage.length === 0) {
@@ -467,13 +466,12 @@ async function deleteMessage(chatId, messageId, id) {
 			throw commonHelpers.customError('user can not delete this message', 403);
 		}
 
-		await Message.destroy({
+		const deleteCount = await Message.destroy({
 			where: { id: messageId, user_id: id, chat_id: chatId },
 			transaction,
 		});
 		await transaction.commit();
-		console.log('helloooooooo');
-		return 'message deleted successfully';
+		return deleteCount;
 	} catch (error) {
 		await transaction.rollback();
 		throw error;

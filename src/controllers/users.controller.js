@@ -1,14 +1,14 @@
 const usersService = require('../services/users.service');
 
-async function users(req, res) {
+async function users(req, res, next) {
 	try {
 		const id = req.user.id;
 		const { page } = req.query;
 		const response = await usersService.users(id, page);
-		res.status(200).json({
-			success: true,
-			message: response,
-		});
+
+		res.statusCode = 200;
+		res.data = response;
+		next();
 	} catch (error) {
 		console.log(error);
 		const statusCode = error.statusCode || 400;
@@ -16,15 +16,14 @@ async function users(req, res) {
 	}
 }
 
-async function myProfile(req, res) {
+async function myProfile(req, res, next) {
 	try {
 		const id = req.user.id;
 		const response = await usersService.profile(id);
 
-		res.status(200).json({
-			success: true,
-			message: response,
-		});
+		res.statusCode = 200;
+		res.data = response;
+		next();
 	} catch (error) {
 		console.log(error);
 		const statusCode = error.statusCode || 400;
@@ -32,15 +31,14 @@ async function myProfile(req, res) {
 	}
 }
 
-async function specificProfile(req, res) {
+async function specificProfile(req, res, next) {
 	try {
 		const { id } = req.params;
 		const response = await usersService.profile(id);
 
-		res.status(200).json({
-			success: true,
-			message: response,
-		});
+		res.statusCode = 200;
+		res.data = response;
+		next();
 	} catch (error) {
 		console.log(error);
 		const statusCode = error.statusCode || 400;
@@ -48,17 +46,17 @@ async function specificProfile(req, res) {
 	}
 }
 
-async function editMyProfile(req, res) {
+async function editMyProfile(req, res, next) {
 	try {
 		const id = req.user.id;
 
 		const image = req.file?.path;
 		const payload = req.body;
 		const response = await usersService.editProfile(id, image, payload);
-		res.status(200).json({
-			success: true,
-			message: response,
-		});
+
+		res.statusCode = 200;
+		res.data = response;
+		next();
 	} catch (error) {
 		console.log(error);
 		const statusCode = error.statusCode || 400;
@@ -66,36 +64,17 @@ async function editMyProfile(req, res) {
 	}
 }
 
-async function editSpecificProfile(req, res) {
-	try {
-		const { id } = req.params;
-
-		const image = req.file?.path;
-		const payload = req.body;
-
-		const response = await usersService.editProfile(id, image, payload);
-		res.status(200).json({
-			success: true,
-			message: response,
-		});
-	} catch (error) {
-		console.log(error);
-		const statusCode = error.statusCode || 400;
-		res.status(statusCode).json({ message: error.message });
-	}
-}
-
-async function inbox(req, res) {
+async function inbox(req, res, next) {
 	try {
 		const { id } = req.params;
 		const { page } = req.query;
 		const loggedInId = req.user.id;
 
 		const response = await usersService.inbox(id, loggedInId, page);
-		res.status(200).json({
-			success: true,
-			message: response,
-		});
+
+		res.statusCode = 200;
+		res.data = response;
+		next();
 	} catch (error) {
 		console.log(error);
 		const statusCode = error.statusCode || 400;
@@ -107,7 +86,6 @@ module.exports = {
 	myProfile,
 	specificProfile,
 	editMyProfile,
-	editSpecificProfile,
 	users,
 	inbox,
 };
