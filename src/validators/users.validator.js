@@ -7,7 +7,7 @@ const editProfileSchema = Joi.object({
 });
 
 const queryPageSchema = Joi.object({
-	page: Joi.number().integer().optional().positive(),
+	page: Joi.number().integer().optional(),
 });
 const idParamSchema = Joi.object({
 	id: Joi.string().uuid().required(),

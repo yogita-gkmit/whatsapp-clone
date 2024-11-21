@@ -18,19 +18,16 @@ async function createSingle(payload, loggedInId) {
 		const { type, user_ids: userIds } = payload;
 
 		const userDetails = await User.findByPk(userIds[0]);
-		if (!userDetails) {
-			throw commonHelpers.customError('User does not found', 404);
-		}
+
 		const name = userDetails.name;
 		const image = userDetails.image;
 		const description = userDetails.about;
-
 
 		const chat = await Chat.create(
 			{ name, image, description, type },
 			{ transaction },
 		);
-		
+
 		await UserChat.bulkCreate(
 			[
 				{ chat_id: chat.id, user_id: loggedInId, is_admin: true },
@@ -57,7 +54,7 @@ async function createGroup(payload, image, loggedInId) {
 		// userIds = JSON.parse(userIds);
 		const chat = await Chat.create({ name, description, type, image });
 		if (!chat) {
-			throw commonHelpers.customError('Chat creation failed', 400);
+			throw commonHelpers.customError('Chat does not exist', 404);
 		}
 		await UserChat.create(
 			{
@@ -234,19 +231,13 @@ async function editrole(chatId, id, payload) {
 async function invite(chatId, id, payload) {
 	const { user_id: userId } = payload;
 	const chat = Chat.findByPk(chatId);
-
-	if (!id) {
-		throw commonHelpers.customError('Token does not exists', 400);
-	}
-	if (!chat) {
-		throw commonHelpers.customError('Chat does not exist', 404);
-	}
-	if (chat.type === 'one-to-one') {
+	if (!chat) throw commonHelpers.customError('Chat does not exist', 404);
+	if (chat.type === 'one-to-one')
 		throw commonHelpers.customError(
 			'Not applicable for one to one conversation',
 			400,
 		);
-	}
+
 	const usersChat = await UserChat.findOne({
 		where: { chat_id: chatId, user_id: id },
 	});
