@@ -7,6 +7,12 @@ const app = express();
 const { sequelize } = require('./models/');
 const PORT = process.env.PORT || 3000;
 
+const swaggerUi = require('swagger-ui-express');
+const YAML = require('yamljs');
+const path = require('path');
+const swaggerDocument = YAML.load(
+	path.join(__dirname, './swagger/swagger.yaml'),
+);
 const { connectToRedis } = require('./config/redis');
 
 app.use(express.json());
@@ -25,6 +31,9 @@ const startServer = async function () {
 };
 startServer();
 
+// Swagger UI setup
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
 app.get('/health-check', (req, res) => {
 	try {
 		console.log('working fine');
@@ -33,8 +42,8 @@ app.get('/health-check', (req, res) => {
 		console.log('Error Message :', err);
 	}
 });
-// app.listen(PORT, () => {
-// 	console.log(`server running on port http://localhost:${PORT}`);
-// });
+app.listen(PORT, () => {
+	console.log(`server running on port http://localhost:${PORT}`);
+});
 
 module.exports = app;
