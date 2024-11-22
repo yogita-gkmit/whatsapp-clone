@@ -1,0 +1,28 @@
+services:
+  nodeapp:
+    build:
+      context: .
+    container_name: whatsapp_clone
+    ports:
+      - '3000:3000'
+    depends_on:
+      - postgres
+      - redis
+
+  postgres:
+    image: postgres
+    container_name: wc_postgres
+    environment:
+      - POSTGRES_USER=${USERNAME}
+      - POSTGRES_PASSWORD=${PASSWORD}
+    volumes:
+      - './data:/var/lib/postgresql/data'
+      - './dumps:/dumps'
+    ports:
+      - '5432:5432'
+
+  redis:
+    image: redis:alpine
+    container_name: wc_redis
+    ports:
+      - 6379:6379
