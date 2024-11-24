@@ -206,6 +206,7 @@ async function editrole(chatId, id, payload) {
 				400,
 			);
 		}
+
 		const usersChat = await UserChat.findOne({
 			where: { user_id: id, chat_id: chatId },
 		});
@@ -227,7 +228,6 @@ async function editrole(chatId, id, payload) {
 			},
 		);
 		await transaction.commit();
-
 		return response;
 	} catch (error) {
 		await transaction.rollback();
