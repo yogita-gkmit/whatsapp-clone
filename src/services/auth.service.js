@@ -80,10 +80,10 @@ async function create(payload, image) {
 }
 
 async function remove(token) {
-	if (!token) {
-		throw commonHelpers.customError('Token is required for logout', 401);
-	}
 	try {
+		if (!token) {
+			throw commonHelpers.customError('Token is required for logout', 401);
+		}
 		const decodedToken = jwt.decode(token);
 		if (!decodedToken) {
 			throw commonHelpers.customError('Invalid token', 401);

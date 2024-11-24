@@ -1,14 +1,15 @@
 async function users(req, res, next) {
 	const receivedData = res.data || [];
-	const resultData = receivedData.map(user => ({
-		id: user.id,
-		name: user.name,
-		about: user.about,
-		image: user.image,
-		createdAt: user.created_at,
-		updatedAt: user.updated_at,
-	}));
-	res.data = resultData;
+	console.log(res.data);
+	// const resultData = receivedData.map(user => ({
+	// 	id: user.id,
+	// 	name: user.name,
+	// 	about: user.about,
+	// 	image: user.image,
+	// 	createdAt: user.created_at,
+	// 	updatedAt: user.updated_at,
+	// }));
+	// res.data = resultData;
 	next();
 }
 
@@ -57,7 +58,7 @@ async function editProfile(req, res, next) {
 
 async function inbox(req, res, next) {
 	const receivedData = res.data || [];
-	console.log(res.data);
+
 	const resultData = receivedData.results.map(userChat => {
 		if (userChat.type === 'group') {
 			return {
@@ -85,8 +86,12 @@ async function inbox(req, res, next) {
 			};
 		}
 	});
-	console.log(resultData);
-	res.data = resultData;
+	const page = {
+		totalItems: receivedData.totalItems,
+		totalPages: receivedData.totalPages,
+		currentPage: receivedData.currentPage,
+	};
+	res.data = { resultData, page };
 	next();
 }
 

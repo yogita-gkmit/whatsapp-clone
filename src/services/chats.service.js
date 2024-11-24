@@ -498,11 +498,11 @@ async function displayMessages(chatId, id, page = 0, filter) {
 		throw commonHelpers.customError('user can not access this chat', 403);
 	}
 
-	const limit = 10;
+	const limit = 4;
 	const offset = limit * page;
 	let message;
 	if (filter === 'message') {
-		message = await Message.findAll({
+		message = await Message.findAndCountAll({
 			where: {
 				chat_id: chatId,
 				message: {
@@ -513,7 +513,7 @@ async function displayMessages(chatId, id, page = 0, filter) {
 			limit: limit,
 		});
 	} else if (filter === 'media') {
-		message = await Message.findAll({
+		message = await Message.findAndCountAll({
 			where: {
 				chat_id: chatId,
 				media: {
@@ -524,14 +524,19 @@ async function displayMessages(chatId, id, page = 0, filter) {
 			limit: limit,
 		});
 	} else {
-		message = await Message.findAll({
+		message = await Message.findAndCountAll({
 			where: { chat_id: chatId },
 			offset: offset,
 			limit: limit,
 		});
 	}
 
-	return message;
+	return {
+		totalItems: message.count,
+		totalPages: Math.ceil(message.count / limit),
+		currentPage: parseInt(page),
+		messages: message.rows,
+	};
 }
 
 module.exports = {
