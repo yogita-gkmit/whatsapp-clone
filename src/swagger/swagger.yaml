@@ -64,12 +64,6 @@ paths:
       tags:
         - auth
       summary: logout user
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              example: ''
       security:
         - apikeyAuth: []
       responses:

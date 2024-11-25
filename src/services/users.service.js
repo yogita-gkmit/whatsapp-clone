@@ -1,4 +1,4 @@
-const { User, sequelize } = require('../models');
+const { User, UserChat, Chat, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const commonHelpers = require('../helpers/common.helper');
 
@@ -57,14 +57,19 @@ async function users(id, page = 0) {
 	const limit = 10;
 	const offset = limit * page;
 
-	const allUsers = await User.findAll({
+	const allUsers = await User.findAndCountAll({
 		where: { id: { [Op.not]: id } },
 		attributes: { exclude: ['email'] },
 		offset: offset,
 		limit: limit,
 	});
 
-	return allUsers;
+	return {
+		allUsers: allUsers.rows,
+		totalItems: allUsers.count,
+		totalPages: Math.ceil(allUsers.count / limit),
+		currentPage: parseInt(page),
+	};
 }
 
 async function inbox(id, loggedInId, page = 0) {
@@ -143,7 +148,13 @@ async function inbox(id, loggedInId, page = 0) {
 			replacements: { id, offset, limit },
 		},
 	);
-	return { results };
+
+	return {
+		results: results,
+		totalItems: results.length,
+		totalPages: Math.ceil(results.length / limit),
+		currentPage: parseInt(page),
+	};
 }
 
 module.exports = { profile, editProfile, users, inbox };

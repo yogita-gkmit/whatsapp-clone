@@ -31,7 +31,6 @@ async function createChat(req, res, next) {
 async function getChat(req, res, next) {
 	const chatData = res.data || [];
 
-	console.log(chatData);
 	let result;
 	if (chatData.type === 'group') {
 		result = {
@@ -177,7 +176,8 @@ async function emailInvite(req, res, next) {
 
 async function displayMessages(req, res, next) {
 	const receivedData = res.data || [];
-	const resultData = receivedData.map(message => ({
+
+	const resultData = receivedData.messages.map(message => ({
 		id: message.id,
 		message: message.message,
 		media: message.media || null,
@@ -187,7 +187,17 @@ async function displayMessages(req, res, next) {
 		chatId: message.chat_id,
 	}));
 
-	res.data = { message: 'Messages retrieved successfully', data: resultData };
+	const page = {
+		totalItems: receivedData.totalItems,
+		totalPages: receivedData.totalPages,
+		currentPage: receivedData.currentPage,
+	};
+
+	res.data = {
+		message: 'Messages retrieved successfully',
+		data: resultData,
+		page: page,
+	};
 	next();
 }
 
