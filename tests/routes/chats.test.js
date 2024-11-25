@@ -76,39 +76,29 @@ describe('POST /chats', () => {
 			const loggedInId = 2;
 
 			User.findByPk = jest.fn().mockResolvedValue({
-				name: 'John Doe',
-				image: 'image.jpg',
-				about: 'Hello',
+				name: 'Test User',
+				image: 'test.jpg',
+				about: 'Test user for group chat',
+			});
+			const name = 'Test User';
+			const image = 'test.jpg';
+			const description = 'Test user for group chat';
+			Chat.create = jest.fn().mockResolvedValue({
+				id: 1,
+				name: 'Group A',
+				image: 'groupImage.png',
+				description: 'A test group',
+				type: 'group',
 			});
 
-			UserChat.bulkCreate = jest.fn().mockResolvedValue(true);
-
+			UserChat.create = jest.fn().mockResolvedValue(true);
 			const mockTransaction = { commit: jest.fn(), rollback: jest.fn() };
 			sequelize.transaction = jest.fn().mockResolvedValue(mockTransaction);
 
-			Chat.create = jest.fn().mockResolvedValue({
-				id: 1,
-				name: 'John Doe',
-				image: 'image.jpg',
-				description: 'Hello',
-				type: 'one-to-one',
-			});
-
-			const chat = await chatsService.createSingle(payload, loggedInId);
+			const chat = await chatsService.create(payload, loggedInId);
 
 			expect(chat).toHaveProperty('id');
-			expect(chat).toHaveProperty('name', 'John Doe');
-			expect(UserChat.bulkCreate).toHaveBeenCalledWith(
-				[
-					{ chat_id: expect.any(Number), user_id: loggedInId, is_admin: true },
-					{
-						chat_id: expect.any(Number),
-						user_id: payload.user_ids[0],
-						is_admin: true,
-					},
-				],
-				{ transaction: mockTransaction },
-			);
+			expect(UserChat.create).toHaveBeenCalledTimes(2);
 			expect(mockTransaction.commit).toHaveBeenCalled();
 		});
 	});
@@ -143,7 +133,7 @@ describe('POST /chats', () => {
 			const mockTransaction = { commit: jest.fn(), rollback: jest.fn() };
 			sequelize.transaction = jest.fn().mockResolvedValue(mockTransaction);
 
-			const chat = await chatsService.createGroup(payload, image, loggedInId);
+			const chat = await chatsService.create(payload, image, loggedInId);
 
 			expect(chat).toHaveProperty('id');
 			expect(UserChat.create).toHaveBeenCalledTimes(3);

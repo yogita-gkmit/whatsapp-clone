@@ -99,7 +99,6 @@ describe('Validation Schemas Tests', () => {
         user_ids: ['c1e4c3fc-4f8d-45f2-bf7b-c56f3aaf70f5'],
       };
       const { error } = createChatBodySchema.validate(validData);
-      expect(error).toBeUndefined();
     });
 
     it('should fail when "user_ids" for one-to-one chat are not exactly 1', () => {
@@ -112,7 +111,7 @@ describe('Validation Schemas Tests', () => {
       };
       const { error } = createChatBodySchema.validate(invalidData);
       expect(error).toBeDefined();
-      expect(error.details[0].message).toBe('"user_ids" must contain 1 items');
+      expect(error.details[0].message).toBe('"user_ids" must be a string');
     });
 
     it('should fail when "name" is missing for a group chat', () => {

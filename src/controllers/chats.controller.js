@@ -3,7 +3,7 @@ const chatsService = require('../services/chats.service');
 async function createChat(req, res, next) {
 	try {
 		const payload = req.body;
-		const image = req.file?.path;
+		const image = req?.file?.path;
 		let response;
 		const loggedInId = req.user.id;
 		response = await chatsService.create(payload, image, loggedInId);
