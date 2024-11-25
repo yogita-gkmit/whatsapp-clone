@@ -10,49 +10,29 @@ const cryptr = new Cryptr('myTotallySecretKey', {
 	saltLength: 10,
 });
 
-async function createSingle(payload, loggedInId) {
+async function create(payload, image, loggedInId) {
 	const transaction = await sequelize.transaction();
 
 	try {
-		const { type, user_ids: userIds } = payload;
-
-		const userDetails = await User.findByPk(userIds[0]);
-		if (!userDetails) {
-			throw commonHelpers.customError('User does not found', 404);
-		}
-		const name = userDetails.name;
-		const image = userDetails.image;
-		const description = userDetails.about;
-
-		const chat = await Chat.create(
-			{ name, image, description, type },
-			{ transaction },
-		);
-
-		await UserChat.bulkCreate(
-			[
-				{ chat_id: chat.id, user_id: loggedInId, is_admin: true },
-				{ chat_id: chat.id, user_id: userIds[0], is_admin: true },
-			],
-			{ transaction },
-		);
-
-		await transaction.commit();
-
-		return chat;
-	} catch (error) {
-		await transaction.rollback();
-		throw error;
-	}
-}
-
-async function createGroup(payload, image, loggedInId) {
-	const transaction = await sequelize.transaction();
-
-	try {
-		const { name, description, type } = payload;
+		let { name, description, type } = payload;
 		let { user_ids: userIds } = payload;
-		const chat = await Chat.create({ name, description, type, image });
+
+		if (!Array.isArray(userIds)) {
+			userIds = [userIds];
+		}
+
+		let chat;
+		if (type === 'one-to-one') {
+			chat = await User.findByPk(loggedInId);
+			if (!chat) {
+				throw commonHelpers.customError('User does not found', 404);
+			}
+			name = chat.name;
+			image = chat.image;
+			description = chat.about;
+		}
+
+		chat = await Chat.create({ name, description, type, image });
 		if (!chat) {
 			throw commonHelpers.customError('Chat creation failed', 400);
 		}
@@ -540,8 +520,9 @@ async function displayMessages(chatId, id, page = 0, filter) {
 }
 
 module.exports = {
-	createSingle,
-	createGroup,
+	// createSingle,
+	// createGroup,
+	create,
 	find,
 	edit,
 	remove,
