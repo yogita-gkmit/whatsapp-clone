@@ -8,4 +8,6 @@ RUN npm install
 
 COPY . .
 
-ENTRYPOINT ["node", "./src/index.js"] 
+EXPOSE 3000
+
+CMD ["npm", "run", "dev"]
