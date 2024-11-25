@@ -1,15 +1,15 @@
 async function users(req, res, next) {
 	const receivedData = res.data || [];
 	console.log(res.data);
-	// const resultData = receivedData.map(user => ({
-	// 	id: user.id,
-	// 	name: user.name,
-	// 	about: user.about,
-	// 	image: user.image,
-	// 	createdAt: user.created_at,
-	// 	updatedAt: user.updated_at,
-	// }));
-	// res.data = resultData;
+	const resultData = receivedData.allUsers.map(user => ({
+		id: user.id,
+		name: user.name,
+		about: user.about,
+		image: user.image,
+		createdAt: user.created_at,
+		updatedAt: user.updated_at,
+	}));
+	res.data = resultData;
 	next();
 }
 
@@ -75,12 +75,12 @@ async function inbox(req, res, next) {
 		} else {
 			return {
 				chatId: userChat.chat_id,
+				chatName: userChat.user_name,
+				description: userChat.user_about,
+				chatImage: userChat.user_image,
 				type: userChat.type,
 				lastMessage: userChat.last_message,
 				lastMedia: userChat.last_media,
-				userName: userChat.user_name,
-				userImage: userChat.user_image,
-				userAbout: userChat.user_about,
 				createdAt: userChat.created_at,
 				updatedAt: userChat.updated_at,
 			};
