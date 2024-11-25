@@ -269,16 +269,18 @@ describe('POST /chats', () => {
 			const page = 0;
 			const filter = 'message';
 
-			Message.findAll = jest.fn().mockResolvedValue([{ message: 'Hello' }]);
+			Message.findAndCountAll = jest
+				.fn()
+				.mockResolvedValue({ rows: [{ message: 'Hello' }], count: 1 });
 
-			const messages = await chatsService.displayMessages(
+			const response = await chatsService.displayMessages(
 				id,
 				userId,
 				page,
 				filter,
 			);
 
-			expect(messages).toHaveLength(1);
+			expect(response.messages).toHaveLength(1);
 		});
 
 		it('should throw error if user does not have access to chat', async () => {

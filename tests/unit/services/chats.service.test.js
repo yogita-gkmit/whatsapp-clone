@@ -298,7 +298,11 @@ describe('Chat Service Tests', () => {
 			const page = 0;
 
 			UserChat.findOne.mockResolvedValue({ user_id: loggedInId });
-			Message.findAll.mockResolvedValue([mockMessage]);
+
+			Message.findAndCountAll.mockResolvedValue({
+				rows: [mockMessage],
+				count: 1,
+			});
 
 			const result = await chatService.displayMessages(
 				chatId,
@@ -306,11 +310,11 @@ describe('Chat Service Tests', () => {
 				page,
 			);
 
-			expect(result).toEqual([mockMessage]);
-			expect(Message.findAll).toHaveBeenCalledWith({
+			expect(result.messages).toEqual([mockMessage]);
+			expect(Message.findAndCountAll).toHaveBeenCalledWith({
 				where: { chat_id: chatId },
 				offset: 0,
-				limit: 10,
+				limit: 4,
 			});
 		});
 
