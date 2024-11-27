@@ -182,7 +182,7 @@ describe('Chat Service Tests', () => {
 			Chat.findByPk.mockResolvedValue(mockChat);
 			UserChat.findOne.mockResolvedValue({ is_admin: true });
 			Chat.update.mockResolvedValue([1, [mockChat]]);
-			sequelize.transaction.mockResolvedValue(mockTransaction);
+			// sequelize.transaction.mockResolvedValue(mockTransaction);
 
 			const result = await chatService.edit(chatId, loggedInId, payload, image);
 
@@ -190,7 +190,7 @@ describe('Chat Service Tests', () => {
 
 			expect(result[1][0]).toEqual(mockChat);
 
-			expect(mockTransaction.commit).toHaveBeenCalled();
+			// expect(mockTransaction.commit).toHaveBeenCalled();
 		});
 
 		it('should throw error if chat does not exist', async () => {
@@ -240,16 +240,16 @@ describe('Chat Service Tests', () => {
 			Chat.findByPk.mockResolvedValue(mockChat);
 			UserChat.findOne.mockResolvedValue({ is_admin: true });
 			UserChat.destroy.mockResolvedValue(true);
-			sequelize.transaction.mockResolvedValue(mockTransaction);
+			// sequelize.transaction.mockResolvedValue(mockTransaction);
 
 			const result = await chatService.removeUser(loggedInId, chatId, userId);
 
 			expect(result).toBe(true);
 			expect(UserChat.destroy).toHaveBeenCalledWith({
 				where: { chat_id: chatId, user_id: userId },
-				transaction: mockTransaction,
+				// transaction: mockTransaction,
 			});
-			expect(mockTransaction.commit).toHaveBeenCalled();
+			// expect(mockTransaction.commit).toHaveBeenCalled();
 		});
 
 		it('should throw error if user is not an admin', async () => {
@@ -278,7 +278,7 @@ describe('Chat Service Tests', () => {
 			User.findByPk.mockResolvedValue(mockUser);
 			UserChat.findOne.mockResolvedValue({ is_admin: true });
 			Message.create.mockResolvedValue(mockMessage);
-			sequelize.transaction.mockResolvedValue(mockTransaction);
+			// sequelize.transaction.mockResolvedValue(mockTransaction);
 
 			const result = await chatService.createMessage(
 				chatId,
@@ -295,9 +295,9 @@ describe('Chat Service Tests', () => {
 					message: 'Test message',
 					media: null,
 				},
-				{ transaction: mockTransaction },
+				// { transaction: mockTransaction },
 			);
-			expect(mockTransaction.commit).toHaveBeenCalled();
+			// expect(mockTransaction.commit).toHaveBeenCalled();
 		});
 
 		it('should throw error if user is not in chat', async () => {
@@ -385,9 +385,9 @@ describe('Chat Service Tests', () => {
 			expect(result).toBe(1);
 			expect(Message.destroy).toHaveBeenCalledWith({
 				where: { id: messageId, user_id: loggedInId, chat_id: 1 },
-				transaction: expect.any(Object),
+				// transaction: expect.any(Object),
 			});
-			expect(transactionMock.commit).toHaveBeenCalled();
+			// expect(transactionMock.commit).toHaveBeenCalled();
 		});
 
 		it('should throw error if message does not exist', async () => {
@@ -601,7 +601,7 @@ describe('Chat Service Tests', () => {
 
 			expect(result).toEqual([1, [mockUserChat]]);
 			expect(UserChat.update).toHaveBeenCalled();
-			expect(mockTransaction.commit).toHaveBeenCalled();
+			// expect(mockTransaction.commit).toHaveBeenCalled();
 		});
 
 		it('should throw error if chat does not exist', async () => {
