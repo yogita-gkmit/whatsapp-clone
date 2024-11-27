@@ -23,37 +23,28 @@ async function profile(id) {
 
 // to edit loggedIn user's profile
 async function editProfile(loggedInid, id, image, payload) {
-	const transaction = await sequelize.transaction();
-
-	try {
-		const { name, email, about } = payload;
-		if (loggedInid !== id) {
-			throw commonHelpers.customError(
-				'user is not allowed to edit other user',
-				403,
-			);
-		}
-		const user = await User.findByPk(id);
-
-		if (!user) {
-			throw commonHelpers.customError('user does not exist', 404);
-		}
-
-		const response = await User.update(
-			{ image: image, name: name, email: email, about: about },
-			{
-				where: { id: id },
-				returning: true,
-			},
-			{ transaction },
+	const { name, email, about } = payload;
+	if (loggedInid !== id) {
+		throw commonHelpers.customError(
+			'user is not allowed to edit other user',
+			403,
 		);
-
-		await transaction.commit();
-		return response;
-	} catch (error) {
-		await transaction.rollback();
-		throw error;
 	}
+	const user = await User.findByPk(id);
+
+	if (!user) {
+		throw commonHelpers.customError('user does not exist', 404);
+	}
+
+	const response = await User.update(
+		{ image: image, name: name, email: email, about: about },
+		{
+			where: { id: id },
+			returning: true,
+		},
+	);
+
+	return response;
 }
 
 // to display contacts
