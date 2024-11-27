@@ -43,8 +43,11 @@ describe('Auth Service Tests', () => {
     it('should send OTP successfully', async () => {
       const payload = { email: mockEmail };
 
+      const generateOtpMock = jest
+        .spyOn(require('../../../src/helpers/auth.helper'), 'generateOtp')
+        .mockReturnValue(mockOtp);
+
       validUser.mockResolvedValue(true);
-      otpGenerator.generate.mockReturnValue(mockOtp);
       reddis.set.mockResolvedValue(true);
       transporter.sendMail.mockImplementation((mailOptions, callback) => {
         callback(null, { response: 'Email sent' });
@@ -52,14 +55,12 @@ describe('Auth Service Tests', () => {
 
       const result = await authService.sendOtp(payload);
 
-      expect(result).toEqual({
-        message: 'otp sent successfully',
-        otp: mockOtp,
-      });
+      expect(result).toEqual(`otp sent successfully, for reference ${mockOtp}`);
       expect(reddis.set).toHaveBeenCalledWith(mockEmail, mockOtp, 'ex', 300);
       expect(transporter.sendMail).toHaveBeenCalled();
-    });
 
+      generateOtpMock.mockRestore();
+    });
     it('should throw error if user is not registered', async () => {
       const payload = { email: mockEmail };
 

@@ -1,4 +1,5 @@
 const { reddis } = require('../config/redis');
+
 async function addTokenToBlacklist(token, expiresIn) {
 	try {
 		await reddis.set(token, 'blacklisted', 'EX', expiresIn);
@@ -8,6 +9,7 @@ async function addTokenToBlacklist(token, expiresIn) {
 		throw err;
 	}
 }
+
 async function isTokenBlacklisted(token) {
 	try {
 		const result = await reddis.get(token);

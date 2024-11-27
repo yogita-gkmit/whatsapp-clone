@@ -86,7 +86,6 @@ router.delete(
 	responseHandler.response,
 );
 
-//////// start from here...........
 router.post(
 	'/:id/messages',
 	authMiddleware,

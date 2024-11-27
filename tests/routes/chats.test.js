@@ -47,17 +47,24 @@ describe('POST /chats', () => {
 		expect(otpResponse.body).toHaveProperty('success', true);
 		const testOtp = otpResponse.body.message.otp;
 
+		// In your test setup, ensure Redis is correctly mocked:
+		const reddisMock = {
+			get: jest.fn().mockResolvedValue(testOtp), // mock get to return the expected OTP
+			set: jest.fn().mockResolvedValue(true), // mock set
+			del: jest.fn().mockResolvedValue(true), // mock del
+		};
+		jest.mock('../../src/helpers/redis.helper', () => reddisMock);
+
 		const verifyOtpResponse = await request(app)
 			.post('/api/auth/verifyOtp')
 			.send({ email: userEmail, otp: testOtp });
 
+		console.log('OTP Verify Response:', verifyOtpResponse.body);
+
 		expect(verifyOtpResponse.statusCode).toBe(200);
-		expect(verifyOtpResponse.body).toHaveProperty(
-			'message',
-			'User verified successfully',
-		);
+		expect(verifyOtpResponse.body).toHaveProperty('User verified successfully');
 		userToken = verifyOtpResponse.body.token;
-		expect(userToken).toBeDefined(); // Ensure the token is assigned
+		expect(userToken).toBeDefined();
 	});
 
 	afterAll(async () => {

@@ -113,6 +113,8 @@ paths:
           description: Successful response
           content:
             application/json: {}
+            
+  /api/users/{id}:
     put:
       tags:
         - user

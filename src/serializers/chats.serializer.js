@@ -22,7 +22,7 @@ async function createChat(req, res, next) {
 			createdAt: receivedData.created_at,
 			updatedAt: receivedData.updated_at,
 		};
-		res.data = { message: 'Operation successful', data: resultData };
+		res.data = { data: resultData };
 	}
 
 	next();
@@ -52,7 +52,7 @@ async function getChat(req, res, next) {
 		};
 	}
 
-	res.data = { message: 'Message created successfully', data: result };
+	res.data = { data: result };
 	next();
 }
 
@@ -87,7 +87,7 @@ async function editMessage(req, res, next) {
 		updatedAt: receivedData.updated_at,
 	};
 
-	res.data = { message: 'Message edited successfully', data: resultData.data };
+	res.data = { data: resultData.data };
 	next();
 }
 
@@ -113,14 +113,14 @@ async function addUser(req, res, next) {
 		updatedAt: receivedData.updated_at,
 	};
 
-	res.data = { message: 'Users added successfully', data: resultData };
+	res.data = { data: resultData };
 	next();
 }
 
 async function removeUser(req, res, next) {
 	const receivedData = res.data || {};
 
-	res.data = { message: 'User removed successfully', data: receivedData.data };
+	res.data = { data: receivedData.data };
 	next();
 }
 
@@ -161,7 +161,6 @@ async function editAdmin(req, res, next) {
 		updatedAt: data.updated_at,
 	};
 	res.data = {
-		message: 'Admin role updated successfully',
 		data: resultData,
 	};
 	next();
@@ -170,7 +169,7 @@ async function editAdmin(req, res, next) {
 async function emailInvite(req, res, next) {
 	const receivedData = res.data || {};
 
-	res.data = { message: 'Invite sent successfully', data: receivedData };
+	res.data = { data: receivedData };
 	next();
 }
 
@@ -194,7 +193,6 @@ async function displayMessages(req, res, next) {
 	};
 
 	res.data = {
-		message: 'Messages retrieved successfully',
 		data: resultData,
 		page: page,
 	};
@@ -203,7 +201,6 @@ async function displayMessages(req, res, next) {
 
 module.exports = {
 	createChat,
-	// getChat,
 	editChat,
 	deleteChat,
 	editAdmin,

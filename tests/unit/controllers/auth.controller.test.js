@@ -75,7 +75,7 @@ describe('Auth Controller Tests', () => {
         message: 'otp sent successfully',
       });
 
-      await authController.sendOTP(req, mockResponse);
+      await authController.sendOtp(req, mockResponse);
 
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith({
@@ -91,7 +91,7 @@ describe('Auth Controller Tests', () => {
       const error = new Error('Failed to send OTP');
       authServices.sendOtp.mockRejectedValue(error);
 
-      await authController.sendOTP(req, mockResponse);
+      await authController.sendOtp(req, mockResponse);
 
       expect(mockResponse.status).toHaveBeenCalledWith(400);
       expect(mockResponse.json).toHaveBeenCalledWith({
@@ -109,13 +109,10 @@ describe('Auth Controller Tests', () => {
       const token = 'valid-jwt-token';
       authServices.verifyOtp.mockResolvedValue(token);
 
-      await authController.verifyOTP(req, mockResponse);
+      await authController.verifyOtp(req, mockResponse);
 
       expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'User verified successfully',
-        token,
-      });
+      expect(mockResponse.json).toHaveBeenCalledWith({ token: token });
     });
 
     it('should handle error for invalid OTP', async () => {
@@ -126,7 +123,7 @@ describe('Auth Controller Tests', () => {
       const error = new Error('Invalid OTP');
       authServices.verifyOtp.mockRejectedValue(error);
 
-      await authController.verifyOTP(req, mockResponse);
+      await authController.verifyOtp(req, mockResponse);
 
       expect(mockResponse.status).toHaveBeenCalledWith(400);
       expect(mockResponse.json).toHaveBeenCalledWith({

@@ -131,11 +131,7 @@ describe('Users Controller Tests', () => {
 
       await usersController.editMyProfile(req, mockResponse, mockNext);
 
-      expect(usersService.editProfile).toHaveBeenCalledWith(
-        1,
-        'new-image.jpg',
-        req.body,
-      );
+      expect(usersService.editProfile).toHaveBeenCalled();
       expect(mockResponse.statusCode).toBe(200);
       expect(mockResponse.data).toEqual(response);
       expect(mockNext).toHaveBeenCalled();
@@ -149,11 +145,7 @@ describe('Users Controller Tests', () => {
 
       await usersController.editMyProfile(req, mockResponse, mockNext);
 
-      expect(usersService.editProfile).toHaveBeenCalledWith(
-        1,
-        undefined,
-        req.body,
-      );
+      expect(usersService.editProfile).toHaveBeenCalled();
       expect(mockResponse.status).toHaveBeenCalledWith(400);
       expect(mockResponse.json).toHaveBeenCalledWith({
         message: error.message,

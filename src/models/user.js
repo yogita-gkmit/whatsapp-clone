@@ -22,6 +22,7 @@ module.exports = (sequelize, DataTypes) => {
       });
     }
   }
+
   User.init(
     {
       id: {
@@ -55,5 +56,6 @@ module.exports = (sequelize, DataTypes) => {
       paranoid: true,
     },
   );
+
   return User;
 };
