@@ -66,7 +66,13 @@ describe('Auth Service Tests', () => {
 
       validUser.mockResolvedValue(false);
 
-      await commonHelpers.customError('User is not registered', 404);
+      commonHelpers.customError.mockReturnValue(
+        new Error('User is not registered'),
+      );
+
+      await expect(authService.sendOtp(payload)).rejects.toThrow(
+        'User is not registered',
+      );
     });
 
     it('should handle email sending error', async () => {
@@ -106,15 +112,39 @@ describe('Auth Service Tests', () => {
       User.findOne.mockResolvedValue(mockUser);
       reddis.get.mockResolvedValue('123456');
 
-      await commonHelpers.customError('OTP did not match', 400);
+      commonHelpers.customError.mockReturnValue(new Error('OTP did not match'));
+
+      await expect(authService.verifyOtp(payload)).rejects.toThrow(
+        'OTP did not match',
+      );
     });
 
     it('should throw error if user is not registered', async () => {
-      const payload = { email: mockEmail, otp: mockOtp };
+      const payload = { email: mockEmail, otp: 'wrongOtp' };
 
-      validUser.mockResolvedValue(false);
+      validUser.mockResolvedValueOnce(false);
 
-      await commonHelpers.customError('User is not registered', 404);
+      commonHelpers.customError.mockReturnValue(
+        new Error('User is not registered'),
+      );
+
+      await expect(authService.verifyOtp(payload)).rejects.toThrow(
+        'User is not registered',
+      );
+    });
+
+    it('should throw error if user is not found', async () => {
+      const payload = { email: 'user@wronggmail.com', otp: 'wrongOtp' };
+
+      User.findOne.mockResolvedValue(null);
+
+      commonHelpers.customError.mockReturnValue(
+        new Error('User is not registered'),
+      );
+
+      await expect(authService.verifyOtp(payload)).rejects.toThrow(
+        'User is not registered',
+      );
     });
   });
 
@@ -157,7 +187,13 @@ describe('Auth Service Tests', () => {
 
       validUser.mockResolvedValue(true);
 
-      await commonHelpers.customError('User already registered', 400);
+      commonHelpers.customError.mockReturnValue(
+        new Error('User already registered'),
+      );
+
+      await expect(authService.create(payload)).rejects.toThrow(
+        'User already registered',
+      );
     });
   });
 
@@ -175,7 +211,13 @@ describe('Auth Service Tests', () => {
     });
 
     it('should throw error if no token is provided', async () => {
-      await commonHelpers.customError('Token is required for logout', 401);
+      commonHelpers.customError.mockReturnValue(
+        new Error('Token is required for logout'),
+      );
+
+      await expect(authService.remove()).rejects.toThrow(
+        'Token is required for logout',
+      );
     });
 
     it('should throw error if token is invalid', async () => {
@@ -183,7 +225,9 @@ describe('Auth Service Tests', () => {
 
       jwt.decode.mockReturnValue(null);
 
-      await commonHelpers.customError('Invalid token', 401);
+      commonHelpers.customError.mockReturnValue(new Error('Invalid token'));
+
+      await expect(authService.remove(token)).rejects.toThrow('Invalid token');
     });
   });
 });

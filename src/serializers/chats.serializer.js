@@ -87,7 +87,7 @@ async function editMessage(req, res, next) {
 		updatedAt: receivedData.updated_at,
 	};
 
-	res.data = { data: resultData.data };
+	res.data = { message: 'Message edited successfully', data: resultData.data };
 	next();
 }
 
