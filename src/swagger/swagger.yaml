@@ -362,3 +362,101 @@ paths:
           description: Successful response
           content:
             application/json: {}
+
+            /api/chats:
+  post:
+    tags:
+      - chat
+    summary: create chat group
+    requestBody:
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                example: single genius
+              description:
+                type: string
+                example: single ladies are genius
+              type:
+                type: string
+                example: group
+              image:
+                type: string
+                format: binary
+              user_ids:
+                type: string
+    responses:
+      '200':
+        description: Successful response
+        content:
+          application/json: {}
+
+  /api/chats/{id}:
+    get:
+      tags:
+        - chat
+      summary: get chat one-to-one chat information
+      parameters:
+        - name: id
+          in: path
+          schema:
+            type: string
+          required: true
+          example: 'd6e1d292-6ba1-4156-9798-7ccd13535ef8'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+
+    put:
+      tags:
+        - chat
+      summary: edit chat details
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                description:
+                  type: string
+                  example: hey there!!!
+                image:
+                  type: string
+                  format: binary
+                name:
+                  type: string
+                  example: new
+      parameters:
+        - name: id
+          in: path
+          schema:
+            type: string
+          required: true
+          example: 'd6e1d292-6ba1-4156-9798-7ccd13535ef8'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+
+    delete:
+      tags:
+        - chat
+      summary: delete chat
+      parameters:
+        - name: id
+          in: path
+          schema:
+            type: string
+          required: true
+          example: bc798efb-25b9-44fe-b08e-073c7d60bf1b
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}

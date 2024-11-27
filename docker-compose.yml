@@ -2,24 +2,25 @@ services:
   nodeapp:
     build:
       context: .
+      dockerfile: Dockerfile
     container_name: whatsapp_clone
     ports:
-      - '3000:3000'
+      - 3000:3000
     depends_on:
       - postgres
       - redis
 
   postgres:
-    image: postgres
     container_name: wc_postgres
+    image: postgres
     environment:
-      - POSTGRES_USER=${USERNAME}
-      - POSTGRES_PASSWORD=${PASSWORD}
+      - POSTGRES_USER=pgsql
+      - POSTGRES_PASSWORD=12345678
     volumes:
       - './data:/var/lib/postgresql/data'
       - './dumps:/dumps'
     ports:
-      - '5432:5432'
+      - 5432:5432
 
   redis:
     image: redis:alpine
