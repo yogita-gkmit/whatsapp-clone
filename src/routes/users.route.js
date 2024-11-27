@@ -32,7 +32,7 @@ router.get(
 );
 
 router.put(
-	'/me',
+	'/:id',
 	authMiddleware,
 	upload.single('image'),
 	validate(userValidator.editProfileSchema),

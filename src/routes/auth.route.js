@@ -11,13 +11,13 @@ const {
 
 const {
 	register,
-	sendOTP,
-	verifyOTP,
+	sendOtp,
+	verifyOtp,
 	logout,
 } = require('../controllers/auth.controller');
 
-router.post('/sendOtp', validate(sendOTPSchema), sendOTP);
-router.post('/verifyOtp', validate(verifyOTPSchema), verifyOTP);
+router.post('/sendOtp', validate(sendOTPSchema), sendOtp);
+router.post('/verifyOtp', validate(verifyOTPSchema), verifyOtp);
 router.post(
 	'/register',
 	upload.single('image'),

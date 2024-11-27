@@ -22,6 +22,8 @@ app.use(express.json());
 registerRoutes(app);
 app.use(express.urlencoded({ extended: true }));
 
+// for reference purpose
+
 // const startServer = async function () {
 // 	try {
 // 		await sequelize.authenticate();
@@ -50,7 +52,7 @@ const startServer = async function () {
 				);
 				console.log('Error: ', err.message);
 				console.log(`Retrying in ${RETRY_DELAY / 1000} seconds...`);
-				setTimeout(connectWithRetry, RETRY_DELAY); // Wait before retrying
+				setTimeout(connectWithRetry, RETRY_DELAY);
 			} else {
 				console.error(
 					'Maximum retry attempts reached. Could not connect to database.',
