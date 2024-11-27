@@ -47,11 +47,10 @@ describe('POST /chats', () => {
 		expect(otpResponse.body).toHaveProperty('success', true);
 		const testOtp = otpResponse.body.message.otp;
 
-		// In your test setup, ensure Redis is correctly mocked:
 		const reddisMock = {
-			get: jest.fn().mockResolvedValue(testOtp), // mock get to return the expected OTP
-			set: jest.fn().mockResolvedValue(true), // mock set
-			del: jest.fn().mockResolvedValue(true), // mock del
+			get: jest.fn().mockResolvedValue(testOtp),
+			set: jest.fn().mockResolvedValue(true),
+			del: jest.fn().mockResolvedValue(true),
 		};
 		jest.mock('../../src/helpers/redis.helper', () => reddisMock);
 
@@ -210,37 +209,6 @@ describe('POST /chats', () => {
 	});
 
 	describe('editMessage', () => {
-		// it('should edit a message successfully', async () => {
-		// 	const id = 1;
-		// 	const messageId = 1;
-		// 	const userId = 2;
-		// 	const payload = { message: 'Updated message' };
-
-		// 	Message.findAll = jest
-		// 		.fn()
-		// 		.mockResolvedValueOnce([
-		// 			{ id: messageId, user_id: userId, message: 'Hello' },
-		// 		]);
-		// 	Message.update = jest
-		// 		.fn()
-		// 		.mockResolvedValueOnce([
-		// 			1,
-		// 			[{ id: messageId, user_id: userId, message: 'Updated message' }],
-		// 		]);
-
-		// 	const result = await chatsService.editMessage(
-		// 		id,
-		// 		messageId,
-		// 		userId,
-		// 		payload,
-		// 		null,
-		// 	);
-
-		// 	console.log('>>>>>>>>result', result);
-
-		// 	expect(result).toHaveProperty('message', 'Updated message');
-		// });
-
 		it('should throw error if user cannot edit message', async () => {
 			const id = 1;
 			const messageId = 2;

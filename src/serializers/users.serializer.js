@@ -65,7 +65,7 @@ async function inbox(req, res, next) {
 	const receivedData = res.data || [];
 	console.log(res.data);
 
-	const chats = receivedData.results.map(userChat => {
+	const users = receivedData.results.map(userChat => {
 		if (userChat.type === 'group') {
 			return {
 				chatId: userChat.chat_id,
@@ -98,7 +98,7 @@ async function inbox(req, res, next) {
 		totalPages: receivedData.totalPages,
 		currentPage: receivedData.currentPage,
 	};
-	res.data = { chats, pagination };
+	res.data = { users, pagination };
 	next();
 }
 

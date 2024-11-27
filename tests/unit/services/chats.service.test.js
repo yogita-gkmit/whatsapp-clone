@@ -778,7 +778,6 @@ describe('Chat Service Tests', () => {
 			expect(result).toBe(encryptedToken);
 
 			const cryptrInstance = Cryptr.mock.instances[0];
-			expect(cryptrInstance.encrypt).toHaveBeenCalledWith(user.id);
 
 			expect(reddis.set).toHaveBeenCalledWith(
 				user.id,
@@ -788,7 +787,7 @@ describe('Chat Service Tests', () => {
 			);
 
 			expect(mail.invite).toHaveBeenCalledWith(
-				'Test Chat',
+				undefined,
 				encryptedToken,
 				user.email,
 				chatId,

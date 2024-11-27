@@ -6,11 +6,9 @@ const environment = process.env.NODE_ENV || 'development';
 const config = require('../../src/config/config.js')[environment];
 var randomstring = require('randomstring');
 let server;
-const redis = require('redis'); // Assuming you're using 'redis' package in your app
-const redisMock = require('redis-mock'); // This is a mock of Redis
+const redis = require('redis');
+const redisMock = require('redis-mock');
 
-// Use the mock Redis client instead of the real one
-jest.mock('redis', () => redisMock);
 jest.mock('../../src/utils/email.util');
 
 beforeAll(done => {
@@ -26,7 +24,6 @@ describe('Authentication API', () => {
 	let user;
 	beforeAll(async () => {
 		await require('../setup')();
-		// await sequelize.sync({ force: true });
 
 		user = await User.create({
 			name: 'Test User',
@@ -74,20 +71,16 @@ describe('Authentication API', () => {
 
 	describe('POST /verifyOtp', () => {
 		it('should verify OTP for a registered user', async () => {
-			// Mock setting OTP in redis
 			redis.set = jest.fn().mockResolvedValue(true);
-			await redis.set(userEmail, testOtp, 'EX', 300); // 5 minutes expiry
+			await redis.set(userEmail, testOtp, 'EX', 300);
 
-			// Send the request to verify OTP
 			const res = await request(app)
 				.post('/api/auth/verifyOtp')
 				.send({ email: userEmail, otp: testOtp });
 
-			// Check if status is 200 and response contains the token
 			expect(res.statusCode).toEqual(200);
-			expect(res.body).toHaveProperty('token'); // Expect token in the response
+			expect(res.body).toHaveProperty('token');
 
-			// Optionally save the token for later use
 			userToken = res.body.token;
 		});
 
