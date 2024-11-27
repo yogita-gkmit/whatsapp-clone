@@ -138,44 +138,33 @@ async function find(chatId, id) {
 
 // to edit a chat
 async function edit(chatId, id, payload, image) {
-	const transaction = await sequelize.transaction();
-
-	try {
-		const { name, description } = payload;
-		const chat = await Chat.findByPk(chatId);
-		if (!chat) {
-			throw commonHelpers.customError('Chat does not exist', 404);
-		}
-		if (chat.type === SINGLE) {
-			throw commonHelpers.customError('Only a group chat can be edited', 400);
-		}
-
-		const usersChat = await UserChat.findOne({
-			where: { user_id: id, chat_id: chatId },
-		});
-		if (!usersChat) {
-			throw commonHelpers.customError('User not found', 404);
-		} else if (!usersChat?.is_admin) {
-			throw commonHelpers.customError('User is not admin', 403);
-		}
-
-		const response = await Chat.update(
-			{ name: name, image: image, description: description },
-			{
-				where: { id: chatId },
-				returning: true,
-			},
-			{
-				transaction,
-			},
-		);
-		await transaction.commit();
-
-		return response;
-	} catch (error) {
-		await transaction.rollback();
-		throw error;
+	const { name, description } = payload;
+	const chat = await Chat.findByPk(chatId);
+	if (!chat) {
+		throw commonHelpers.customError('Chat does not exist', 404);
 	}
+	if (chat.type === SINGLE) {
+		throw commonHelpers.customError('Only a group chat can be edited', 400);
+	}
+
+	const usersChat = await UserChat.findOne({
+		where: { user_id: id, chat_id: chatId },
+	});
+	if (!usersChat) {
+		throw commonHelpers.customError('User not found', 404);
+	} else if (!usersChat?.is_admin) {
+		throw commonHelpers.customError('User is not admin', 403);
+	}
+
+	const response = await Chat.update(
+		{ name: name, image: image, description: description },
+		{
+			where: { id: chatId },
+			returning: true,
+		},
+	);
+
+	return response;
 }
 
 // to remove a chat
@@ -201,7 +190,7 @@ async function remove(chatId, id) {
 			transaction,
 		});
 
-		const deleteCount = await chat.destroy();
+		const deleteCount = await chat.destroy({ transaction });
 		await transaction.commit();
 
 		return deleteCount;
@@ -213,47 +202,36 @@ async function remove(chatId, id) {
 
 // to edit admin
 async function editRole(chatId, id, payload) {
-	const transaction = await sequelize.transaction();
-
-	try {
-		const { user_ids: userIds } = payload;
-		const chat = await Chat.findByPk(chatId);
-		if (!chat) {
-			throw commonHelpers.customError('Chat does not exist', 404);
-		}
-		if (chat.type === SINGLE) {
-			throw commonHelpers.customError(
-				'Not applicable for one to one conversation',
-				400,
-			);
-		}
-
-		const usersChat = await UserChat.findOne({
-			where: { user_id: id, chat_id: chatId },
-		});
-		if (!usersChat) {
-			throw commonHelpers.customError('User not found', 404);
-		} else if (!usersChat?.is_admin) {
-			throw commonHelpers.customError('User is not admin', 403);
-		}
-		const response = await UserChat.update(
-			{
-				is_admin: true,
-			},
-			{
-				where: { chat_id: chat.id, user_id: { [Op.in]: userIds } },
-				returning: true,
-			},
-			{
-				transaction,
-			},
-		);
-		await transaction.commit();
-		return response;
-	} catch (error) {
-		await transaction.rollback();
-		throw error;
+	const { user_ids: userIds } = payload;
+	const chat = await Chat.findByPk(chatId);
+	if (!chat) {
+		throw commonHelpers.customError('Chat does not exist', 404);
 	}
+	if (chat.type === SINGLE) {
+		throw commonHelpers.customError(
+			'Not applicable for one to one conversation',
+			400,
+		);
+	}
+
+	const usersChat = await UserChat.findOne({
+		where: { user_id: id, chat_id: chatId },
+	});
+	if (!usersChat) {
+		throw commonHelpers.customError('User not found', 404);
+	} else if (!usersChat?.is_admin) {
+		throw commonHelpers.customError('User is not admin', 403);
+	}
+	const response = await UserChat.update(
+		{
+			is_admin: true,
+		},
+		{
+			where: { chat_id: chat.id, user_id: { [Op.in]: userIds } },
+			returning: true,
+		},
+	);
+	return response;
 }
 
 // invite sent to add user in chat
@@ -298,217 +276,164 @@ async function invite(chatId, id, payload) {
 
 // to add user in chat after invite accepted
 async function addUser(chatId, id, token) {
-	const transaction = await sequelize.transaction();
+	const decoded = cryptr.decrypt(token);
+	const inviteToken = await reddis.get(id);
 
-	try {
-		const decoded = cryptr.decrypt(token);
-		const inviteToken = await reddis.get(id);
-
-		if (!inviteToken) {
-			throw commonHelpers.customError('Token expired or invalid', 401);
-		}
-		const inviteDecoded = await cryptr.decrypt(inviteToken);
-		if (decoded !== inviteDecoded) {
-			throw commonHelpers.customError('Invalid token', 403);
-		}
-
-		if (id !== decoded) {
-			throw commonHelpers.customError('Invalid invite', 400);
-		}
-
-		const chat = await Chat.findByPk(chatId);
-		if (!chat) {
-			throw commonHelpers.customError('Chat does not exist', 404);
-		}
-		if (chat.type === SINGLE) {
-			throw commonHelpers.customError(
-				'Not applicable for one to one conversation',
-				400,
-			);
-		}
-		const response = await UserChat.create(
-			{
-				chat_id: chatId,
-				user_id: decoded,
-				is_admin: false,
-			},
-			{
-				transaction,
-			},
-		);
-		await transaction.commit();
-
-		return response;
-	} catch (error) {
-		await transaction.rollback();
-		throw error;
+	if (!inviteToken) {
+		throw commonHelpers.customError('Token expired or invalid', 401);
 	}
+	const inviteDecoded = await cryptr.decrypt(inviteToken);
+	if (decoded !== inviteDecoded) {
+		throw commonHelpers.customError('Invalid token', 403);
+	}
+
+	if (id !== decoded) {
+		throw commonHelpers.customError('Invalid invite', 400);
+	}
+
+	const chat = await Chat.findByPk(chatId);
+	if (!chat) {
+		throw commonHelpers.customError('Chat does not exist', 404);
+	}
+	if (chat.type === SINGLE) {
+		throw commonHelpers.customError(
+			'Not applicable for one to one conversation',
+			400,
+		);
+	}
+	const response = await UserChat.create({
+		chat_id: chatId,
+		user_id: decoded,
+		is_admin: false,
+	});
+
+	return response;
 }
 
 // to remove user from chat, only admin can remove
 async function removeUser(id, chatId, userId) {
-	const transaction = await sequelize.transaction();
-
-	try {
-		const chat = await Chat.findByPk(chatId);
-		if (!chat) {
-			throw commonHelpers.customError('Chat does not exist', 404);
-		}
-
-		if (chat.type === SINGLE) {
-			throw commonHelpers.customError(
-				'Not applicable for one to one conversation',
-				400,
-			);
-		}
-		const usersChat = await UserChat.findOne({
-			where: { chat_id: chatId, user_id: id },
-		});
-
-		if (!usersChat) {
-			throw commonHelpers.customError('User not found', 404);
-		} else if (!usersChat?.is_admin) {
-			throw commonHelpers.customError('User is not admin', 403);
-		}
-
-		const deleteCount = await UserChat.destroy({
-			where: { chat_id: chatId, user_id: userId },
-			transaction,
-		});
-		await transaction.commit();
-		return deleteCount;
-	} catch (error) {
-		await transaction.rollback();
-		throw error;
+	const chat = await Chat.findByPk(chatId);
+	if (!chat) {
+		throw commonHelpers.customError('Chat does not exist', 404);
 	}
+
+	if (chat.type === SINGLE) {
+		throw commonHelpers.customError(
+			'Not applicable for one to one conversation',
+			400,
+		);
+	}
+	const usersChat = await UserChat.findOne({
+		where: { chat_id: chatId, user_id: id },
+	});
+
+	if (!usersChat) {
+		throw commonHelpers.customError('User not found', 404);
+	} else if (!usersChat?.is_admin) {
+		throw commonHelpers.customError('User is not admin', 403);
+	}
+
+	const deleteCount = await UserChat.destroy({
+		where: { chat_id: chatId, user_id: userId },
+	});
+
+	return deleteCount;
 }
 
 // to create message
 async function createMessage(chatId, id, payload, media) {
-	const transaction = await sequelize.transaction();
+	const { message } = payload;
 
-	try {
-		const { message } = payload;
-
-		const chat = await Chat.findByPk(chatId);
-		if (!chat) {
-			throw commonHelpers.customError('Chat does not exist', 404);
-		}
-		const user = await User.findByPk(id);
-
-		if (!user) {
-			throw commonHelpers.customError('User does not exist', 404);
-		}
-
-		const usersChat = await UserChat.findOne({
-			where: { chat_id: chatId, user_id: id },
-		});
-
-		if (!usersChat) {
-			throw commonHelpers.customError('User not found in chat', 404);
-		}
-		let response;
-
-		if (message || media) {
-			response = await Message.create(
-				{
-					user_id: id,
-					chat_id: chatId,
-					message: message,
-					media: media,
-				},
-				{
-					transaction,
-				},
-			);
-		} else {
-			throw commonHelpers.customError('message should not be empty', 422);
-		}
-
-		await transaction.commit();
-		return response;
-	} catch (error) {
-		await transaction.rollback();
-		throw error;
+	const chat = await Chat.findByPk(chatId);
+	if (!chat) {
+		throw commonHelpers.customError('Chat does not exist', 404);
 	}
+	const user = await User.findByPk(id);
+
+	if (!user) {
+		throw commonHelpers.customError('User does not exist', 404);
+	}
+
+	const usersChat = await UserChat.findOne({
+		where: { chat_id: chatId, user_id: id },
+	});
+
+	if (!usersChat) {
+		throw commonHelpers.customError('User not found in chat', 404);
+	}
+	let response;
+
+	if (message || media) {
+		response = await Message.create({
+			user_id: id,
+			chat_id: chatId,
+			message: message,
+			media: media,
+		});
+	} else {
+		throw commonHelpers.customError('message should not be empty', 422);
+	}
+
+	return response;
 }
 
 // to edit last message
 async function editMessage(chatId, messageId, id, payload) {
-	const transaction = await sequelize.transaction();
+	const { message } = payload;
 
-	try {
-		const { message } = payload;
+	const lastMessage = await Message.findAll({
+		where: { chat_id: chatId, user_id: id },
+		order: [['created_at', 'DESC']],
+		limit: 1,
+		plain: true,
+	});
 
-		const lastMessage = await Message.findAll({
-			where: { chat_id: chatId, user_id: id },
-			order: [['created_at', 'DESC']],
-			limit: 1,
-			plain: true,
-		});
-
-		if (lastMessage.id !== messageId) {
-			throw commonHelpers.customError('user can not edit this message', 403);
-		}
-
-		const [updateRowCount, updatedMessage] = await Message.update(
-			{
-				message: message,
-			},
-			{
-				where: {
-					id: messageId,
-					user_id: id,
-					chat_id: chatId,
-				},
-				returning: true,
-			},
-			{
-				transaction,
-			},
-		);
-
-		if (updateRowCount === 0) {
-			throw commonHelpers.customError('Message not found', 404);
-		}
-
-		await transaction.commit();
-		return updatedMessage;
-	} catch (error) {
-		await transaction.rollback();
-		throw error;
+	if (lastMessage.id !== messageId) {
+		throw commonHelpers.customError('user can not edit this message', 403);
 	}
+
+	const [updateRowCount, updatedMessage] = await Message.update(
+		{
+			message: message,
+		},
+		{
+			where: {
+				id: messageId,
+				user_id: id,
+				chat_id: chatId,
+			},
+			returning: true,
+		},
+	);
+
+	if (updateRowCount === 0) {
+		throw commonHelpers.customError('Message not found', 404);
+	}
+
+	return updatedMessage;
 }
 
 // to delete message
 async function deleteMessage(chatId, messageId, id) {
-	const transaction = await sequelize.transaction();
+	const lastMessage = await Message.findAll({
+		where: { chat_id: chatId, user_id: id },
+		order: [['created_at', 'DESC']],
+		limit: 1,
+	});
 
-	try {
-		const lastMessage = await Message.findAll({
-			where: { chat_id: chatId, user_id: id },
-			order: [['created_at', 'DESC']],
-			limit: 1,
-		});
-
-		if (!lastMessage || lastMessage.length === 0) {
-			throw commonHelpers.customError('Message not found', 404);
-		}
-
-		if (lastMessage[0]?.id !== messageId) {
-			throw commonHelpers.customError('user can not delete this message', 403);
-		}
-
-		const deleteCount = await Message.destroy({
-			where: { id: messageId, user_id: id, chat_id: chatId },
-			transaction,
-		});
-		await transaction.commit();
-		return deleteCount;
-	} catch (error) {
-		await transaction.rollback();
-		throw error;
+	if (!lastMessage || lastMessage.length === 0) {
+		throw commonHelpers.customError('Message not found', 404);
 	}
+
+	if (lastMessage[0]?.id !== messageId) {
+		throw commonHelpers.customError('user can not delete this message', 403);
+	}
+
+	const deleteCount = await Message.destroy({
+		where: { id: messageId, user_id: id, chat_id: chatId },
+	});
+
+	return deleteCount;
 }
 
 // to display all messages

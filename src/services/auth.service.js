@@ -53,32 +53,20 @@ async function verifyOtp(payload) {
 
 // register new user
 async function create(payload, image) {
-	const transaction = await sequelize.transaction();
+	const { name, about, email } = payload;
 
-	try {
-		const { name, about, email } = payload;
-
-		if (await authHelper.validUser(email)) {
-			throw commonHelpers.customError('User already registered', 409);
-		}
-
-		const response = await User.create(
-			{
-				name,
-				image,
-				email,
-				about,
-			},
-			{ transaction },
-		);
-
-		await transaction.commit();
-
-		return response;
-	} catch (error) {
-		await transaction.rollback();
-		throw error;
+	if (await authHelper.validUser(email)) {
+		throw commonHelpers.customError('User already registered', 409);
 	}
+
+	const response = await User.create({
+		name,
+		image,
+		email,
+		about,
+	});
+
+	return response;
 }
 
 // logout user
