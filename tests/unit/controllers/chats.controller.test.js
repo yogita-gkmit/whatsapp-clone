@@ -195,11 +195,11 @@ describe('Chat Controller Tests', () => {
       req.params.id = 'chat-id';
       req.body = { userId: 'admin-id' };
       const mockResponse = { id: 'chat-id', admin: 'admin-id' };
-      chatsService.editrole.mockResolvedValue(mockResponse);
+      chatsService.editRole.mockResolvedValue(mockResponse);
 
       await chatsController.editAdmin(req, res, next);
 
-      expect(chatsService.editrole).toHaveBeenCalledWith(
+      expect(chatsService.editRole).toHaveBeenCalledWith(
         'chat-id',
         req.user.id,
         req.body,
@@ -211,7 +211,7 @@ describe('Chat Controller Tests', () => {
 
     it('should handle errors during editing admin', async () => {
       const mockError = new Error('Failed to edit admin');
-      chatsService.editrole.mockRejectedValue(mockError);
+      chatsService.editRole.mockRejectedValue(mockError);
 
       await chatsController.editAdmin(req, res, next);
 

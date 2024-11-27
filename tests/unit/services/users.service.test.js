@@ -2,7 +2,7 @@ const { User, UserChat, Message } = require('../../../src/models');
 const { sequelize } = require('../../../src/models');
 const { Op } = require('sequelize');
 const commonHelpers = require('../../../src/helpers/common.helper');
-const chatService = require('../../../src/services/users.service');
+const userService = require('../../../src/services/users.service');
 
 jest.mock('../../../src/models');
 jest.mock('../../../src/helpers/common.helper');
@@ -32,7 +32,7 @@ describe('User Service Tests', () => {
     it('should return user profile successfully', async () => {
       User.findByPk.mockResolvedValue(mockUser);
 
-      const result = await chatService.profile(1);
+      const result = await userService.profile(1);
 
       expect(result).toEqual({
         user: {
@@ -61,19 +61,25 @@ describe('User Service Tests', () => {
         email: 'updated@example.com',
         about: 'Updated about',
       };
-      const image = 'updated-image.jpg';
+
       const user = { ...mockUser, ...payload };
 
       User.findByPk.mockResolvedValue(mockUser);
       User.update.mockResolvedValue([1, [user]]);
       sequelize.transaction.mockResolvedValue(mockTransaction);
 
-      const result = await chatService.editProfile(1, image, payload);
+      const result = await userService.editProfile(
+        1,
+        1,
+        'updated-image.jpg',
+        payload,
+      );
 
       expect(result[1][0]).toEqual(user);
+
       expect(User.update).toHaveBeenCalledWith(
         {
-          image,
+          image: 'updated-image.jpg',
           name: payload.name,
           email: payload.email,
           about: payload.about,
@@ -82,10 +88,9 @@ describe('User Service Tests', () => {
           where: { id: 1 },
           returning: true,
         },
-        {
-          transaction: mockTransaction,
-        },
+        { transaction: mockTransaction },
       );
+
       expect(mockTransaction.commit).toHaveBeenCalled();
     });
 
@@ -106,13 +111,15 @@ describe('User Service Tests', () => {
         email: 'updated@example.com',
         about: 'Updated about',
       };
+
       User.findByPk.mockResolvedValue(mockUser);
       User.update.mockRejectedValue(new Error('Database error'));
       sequelize.transaction.mockResolvedValue(mockTransaction);
 
       await expect(
-        chatService.editProfile(1, 'image.jpg', payload),
+        userService.editProfile(1, 1, 'image.jpg', payload),
       ).rejects.toThrow('Database error');
+
       expect(mockTransaction.rollback).toHaveBeenCalled();
     });
   });
@@ -122,7 +129,7 @@ describe('User Service Tests', () => {
       User.findByPk.mockResolvedValue(mockUser);
       User.findAndCountAll.mockResolvedValue({ rows: [mockUser], count: 1 });
 
-      const result = await chatService.users(1);
+      const result = await userService.users(1);
 
       expect(result.allUsers).toEqual([mockUser]);
       expect(User.findAndCountAll).toHaveBeenCalledWith({
@@ -166,7 +173,7 @@ describe('User Service Tests', () => {
       UserChat.findAll.mockResolvedValue([mockUserChat]);
       sequelize.query.mockResolvedValue([[mockChats, mockLastMessage]]);
 
-      const result = await chatService.inbox(1, 1);
+      const result = await userService.inbox(1, 1);
 
       expect(result).toEqual({
         currentPage: 0,
@@ -205,7 +212,7 @@ describe('User Service Tests', () => {
       commonHelpers.customError.mockReturnValue(
         new Error('user does not exist'),
       );
-      await expect(chatService.inbox(1, 1)).rejects.toThrow(
+      await expect(userService.inbox(1, 1)).rejects.toThrow(
         'user does not exist',
       );
     });
@@ -214,7 +221,7 @@ describe('User Service Tests', () => {
       User.findByPk.mockResolvedValue({ id: 1 });
 
       commonHelpers.customError.mockReturnValue(new Error('Invalid user'));
-      await expect(chatService.inbox(1, 2)).rejects.toThrow('Invalid user');
+      await expect(userService.inbox(1, 2)).rejects.toThrow('Invalid user');
     });
   });
 });
