@@ -6,7 +6,7 @@ const mail = require('../helpers/email.helper');
 const { SINGLE, GROUP } = require('../constants/chats.constant.js');
 const Cryptr = require('cryptr');
 
-const cryptr = new Cryptr('myTotallySecretKey', {
+const cryptr = new Cryptr(process.env.CRYPTR_KEY, {
 	encoding: 'base64',
 	pbkdf2Iterations: 10000,
 	saltLength: 10,
@@ -345,7 +345,7 @@ async function addUser(chatId, id, token) {
 	}
 }
 
-// to remove user from chat
+// to remove user from chat, only admin can remove
 async function removeUser(id, chatId, userId) {
 	const transaction = await sequelize.transaction();
 
