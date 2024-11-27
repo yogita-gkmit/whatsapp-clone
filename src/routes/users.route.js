@@ -14,7 +14,7 @@ router.get(
 	authMiddleware,
 	usersController.users,
 	usersSerializer.users,
-	responseHandler.userResponse,
+	responseHandler.userDisplayResponse,
 );
 router.get(
 	'/me',
@@ -49,7 +49,7 @@ router.get(
 	validate(userValidator.queryPageSchema, false, true),
 	usersController.inbox,
 	usersSerializer.inbox,
-	responseHandler.userResponse,
+	responseHandler.userDisplayResponse,
 );
 
 module.exports = router;
