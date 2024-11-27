@@ -1,15 +1,18 @@
 const { Chat, User, UserChat, Message, sequelize } = require('../models');
 const commonHelpers = require('../helpers/common.helper');
 const { reddis } = require('../config/redis');
-const { Op } = require('sequelize');
+const { Op, Sequelize } = require('sequelize');
 const mail = require('../helpers/email.helper');
+const { SINGLE, GROUP } = require('../constants/chats.constant.js');
 const Cryptr = require('cryptr');
+
 const cryptr = new Cryptr('myTotallySecretKey', {
 	encoding: 'base64',
 	pbkdf2Iterations: 10000,
 	saltLength: 10,
 });
 
+// to create chat one-to-one and group both
 async function create(payload, image, loggedInId) {
 	const transaction = await sequelize.transaction();
 
@@ -17,13 +20,40 @@ async function create(payload, image, loggedInId) {
 		let { name, description, type } = payload;
 		let { user_ids: userIds } = payload;
 
-		if (!Array.isArray(userIds)) {
-			userIds = [userIds];
-		}
-
 		let chat;
-		if (type === 'one-to-one') {
+
+		if (type === SINGLE) {
+			// to check if the one-to-one chat already exists
+			const results = await Chat.findAll({
+				attributes: ['id'],
+				include: [
+					{
+						model: User,
+						attributes: [],
+						through: {
+							attributes: [],
+						},
+						where: {
+							id: {
+								[Op.in]: [loggedInId, userIds],
+							},
+						},
+						required: true,
+					},
+				],
+				where: {
+					type: 'one-to-one',
+				},
+				having: Sequelize.literal('COUNT(*) > 1'),
+				group: ['Chat.id'],
+			});
+
+			if (Array.isArray(results) && results.length > 0) {
+				throw commonHelpers.customError('Chat already exists', 409);
+			}
+
 			chat = await User.findByPk(loggedInId);
+
 			if (!chat) {
 				throw commonHelpers.customError('User does not found', 404);
 			}
@@ -32,10 +62,16 @@ async function create(payload, image, loggedInId) {
 			description = chat.about;
 		}
 
+		if (!Array.isArray(userIds)) {
+			userIds = [userIds];
+		}
+
 		chat = await Chat.create({ name, description, type, image });
+
 		if (!chat) {
 			throw commonHelpers.customError('Chat creation failed', 400);
 		}
+
 		await UserChat.create(
 			{
 				chat_id: chat.id,
@@ -67,13 +103,15 @@ async function create(payload, image, loggedInId) {
 	}
 }
 
+// to display a chat
 async function find(chatId, id) {
 	const chat = await Chat.findByPk(chatId);
+
 	if (!chat) {
 		throw commonHelpers.customError('Chat does not exist', 404);
 	}
 
-	if (chat.type === 'group') {
+	if (chat.type === GROUP) {
 		return chat;
 	} else {
 		const userIds = await UserChat.findAll({ chat_id: chatId });
@@ -98,6 +136,7 @@ async function find(chatId, id) {
 	}
 }
 
+// to edit a chat
 async function edit(chatId, id, payload, image) {
 	const transaction = await sequelize.transaction();
 
@@ -107,7 +146,7 @@ async function edit(chatId, id, payload, image) {
 		if (!chat) {
 			throw commonHelpers.customError('Chat does not exist', 404);
 		}
-		if (chat.type === 'one-to-one') {
+		if (chat.type === SINGLE) {
 			throw commonHelpers.customError('Only a group chat can be edited', 400);
 		}
 
@@ -139,6 +178,7 @@ async function edit(chatId, id, payload, image) {
 	}
 }
 
+// to remove a chat
 async function remove(chatId, id) {
 	const transaction = await sequelize.transaction();
 
@@ -171,7 +211,8 @@ async function remove(chatId, id) {
 	}
 }
 
-async function editrole(chatId, id, payload) {
+// to edit admin
+async function editRole(chatId, id, payload) {
 	const transaction = await sequelize.transaction();
 
 	try {
@@ -180,7 +221,7 @@ async function editrole(chatId, id, payload) {
 		if (!chat) {
 			throw commonHelpers.customError('Chat does not exist', 404);
 		}
-		if (chat.type === 'one-to-one') {
+		if (chat.type === SINGLE) {
 			throw commonHelpers.customError(
 				'Not applicable for one to one conversation',
 				400,
@@ -215,6 +256,7 @@ async function editrole(chatId, id, payload) {
 	}
 }
 
+// invite sent to add user in chat
 async function invite(chatId, id, payload) {
 	const { user_id: userId } = payload;
 	const chat = Chat.findByPk(chatId);
@@ -225,7 +267,7 @@ async function invite(chatId, id, payload) {
 	if (!chat) {
 		throw commonHelpers.customError('Chat does not exist', 404);
 	}
-	if (chat.type === 'one-to-one') {
+	if (chat.type === SINGLE) {
 		throw commonHelpers.customError(
 			'Not applicable for one to one conversation',
 			400,
@@ -251,10 +293,10 @@ async function invite(chatId, id, payload) {
 	const email = user.email;
 	await mail.invite(name, token, email, chatId);
 
-	// TO REMOVE: token (temporary)
 	return token;
 }
 
+// to add user in chat after invite accepted
 async function addUser(chatId, id, token) {
 	const transaction = await sequelize.transaction();
 
@@ -263,7 +305,7 @@ async function addUser(chatId, id, token) {
 		const inviteToken = await reddis.get(id);
 
 		if (!inviteToken) {
-			throw commonHelpers.customError('Token expired or invalid', 400);
+			throw commonHelpers.customError('Token expired or invalid', 401);
 		}
 		const inviteDecoded = await cryptr.decrypt(inviteToken);
 		if (decoded !== inviteDecoded) {
@@ -278,7 +320,7 @@ async function addUser(chatId, id, token) {
 		if (!chat) {
 			throw commonHelpers.customError('Chat does not exist', 404);
 		}
-		if (chat.type === 'one-to-one') {
+		if (chat.type === SINGLE) {
 			throw commonHelpers.customError(
 				'Not applicable for one to one conversation',
 				400,
@@ -295,7 +337,7 @@ async function addUser(chatId, id, token) {
 			},
 		);
 		await transaction.commit();
-		console.log('>>>>>>>>>>>response', response);
+
 		return response;
 	} catch (error) {
 		await transaction.rollback();
@@ -303,6 +345,7 @@ async function addUser(chatId, id, token) {
 	}
 }
 
+// to remove user from chat
 async function removeUser(id, chatId, userId) {
 	const transaction = await sequelize.transaction();
 
@@ -312,7 +355,7 @@ async function removeUser(id, chatId, userId) {
 			throw commonHelpers.customError('Chat does not exist', 404);
 		}
 
-		if (chat.type === 'one-to-one') {
+		if (chat.type === SINGLE) {
 			throw commonHelpers.customError(
 				'Not applicable for one to one conversation',
 				400,
@@ -340,6 +383,7 @@ async function removeUser(id, chatId, userId) {
 	}
 }
 
+// to create message
 async function createMessage(chatId, id, payload, media) {
 	const transaction = await sequelize.transaction();
 
@@ -389,6 +433,7 @@ async function createMessage(chatId, id, payload, media) {
 	}
 }
 
+// to edit last message
 async function editMessage(chatId, messageId, id, payload) {
 	const transaction = await sequelize.transaction();
 
@@ -435,6 +480,7 @@ async function editMessage(chatId, messageId, id, payload) {
 	}
 }
 
+// to delete message
 async function deleteMessage(chatId, messageId, id) {
 	const transaction = await sequelize.transaction();
 
@@ -465,6 +511,7 @@ async function deleteMessage(chatId, messageId, id) {
 	}
 }
 
+// to display all messages
 async function displayMessages(chatId, id, page = 0, filter) {
 	if (!chatId) {
 		throw commonHelpers.customError('chat does not exist', 404);
@@ -520,13 +567,11 @@ async function displayMessages(chatId, id, page = 0, filter) {
 }
 
 module.exports = {
-	// createSingle,
-	// createGroup,
 	create,
 	find,
 	edit,
 	remove,
-	editrole,
+	editRole,
 	addUser,
 	invite,
 	removeUser,

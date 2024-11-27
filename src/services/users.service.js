@@ -1,7 +1,8 @@
-const { User, UserChat, Chat, sequelize } = require('../models');
+const { User, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const commonHelpers = require('../helpers/common.helper');
 
+// to display user's profile
 async function profile(id) {
 	const user = await User.findByPk(id);
 	if (!user) {
@@ -20,11 +21,18 @@ async function profile(id) {
 	};
 }
 
-async function editProfile(id, image, payload) {
+// to edit loggedIn user's profile
+async function editProfile(loggedInid, id, image, payload) {
 	const transaction = await sequelize.transaction();
 
 	try {
 		const { name, email, about } = payload;
+		if (loggedInid !== id) {
+			throw commonHelpers.customError(
+				'user is not allowed to edit other user',
+				403,
+			);
+		}
 		const user = await User.findByPk(id);
 
 		if (!user) {
@@ -48,6 +56,7 @@ async function editProfile(id, image, payload) {
 	}
 }
 
+// to display contacts
 async function users(id, page = 0) {
 	const user = await User.findByPk(id);
 	if (!user) {
@@ -72,6 +81,7 @@ async function users(id, page = 0) {
 	};
 }
 
+// to show inbox
 async function inbox(id, loggedInId, page = 0) {
 	const user = await User.findByPk(id);
 	if (!user) {
@@ -94,7 +104,6 @@ async function inbox(id, loggedInId, page = 0) {
 		lm.message AS last_message,
 		lm.media AS last_media,
 		lm.created_at AS last_message_created_at,
-
 		CASE
     		WHEN c.type = 'one-to-one'
     		THEN (SELECT u.name FROM users u WHERE u.id = uc.user_id)
