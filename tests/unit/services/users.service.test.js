@@ -120,12 +120,12 @@ describe('User Service Tests', () => {
   describe('users', () => {
     it('should return a list of users', async () => {
       User.findByPk.mockResolvedValue(mockUser);
-      User.findAll.mockResolvedValue([mockUser]);
+      User.findAndCountAll.mockResolvedValue({ rows: [mockUser], count: 1 });
 
       const result = await chatService.users(1);
 
-      expect(result).toEqual([mockUser]);
-      expect(User.findAll).toHaveBeenCalledWith({
+      expect(result.allUsers).toEqual([mockUser]);
+      expect(User.findAndCountAll).toHaveBeenCalledWith({
         where: { id: { [Op.not]: 1 } },
         attributes: { exclude: ['email'] },
         offset: 0,
@@ -169,6 +169,7 @@ describe('User Service Tests', () => {
       const result = await chatService.inbox(1, 1);
 
       expect(result).toEqual({
+        currentPage: 0,
         results: [
           [
             {
@@ -187,6 +188,8 @@ describe('User Service Tests', () => {
             },
           ],
         ],
+        totalItems: 2,
+        totalPages: 1,
       });
       expect(sequelize.query).toHaveBeenCalledWith(
         expect.any(String),

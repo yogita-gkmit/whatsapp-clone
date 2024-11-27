@@ -3,15 +3,11 @@ const chatsService = require('../services/chats.service');
 async function createChat(req, res, next) {
 	try {
 		const payload = req.body;
-		const { type } = payload;
-		const image = req.file?.path;
+		const image = req?.file?.path;
 		let response;
 		const loggedInId = req.user.id;
-		if (type === 'one-to-one') {
-			response = await chatsService.createSingle(payload, loggedInId);
-		} else {
-			response = await chatsService.createGroup(payload, image, loggedInId);
-		}
+		response = await chatsService.create(payload, image, loggedInId);
+
 		res.statusCode = 201;
 		res.data = response;
 		next();

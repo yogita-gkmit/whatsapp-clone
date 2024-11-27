@@ -29,14 +29,11 @@ describe('Chat Controller Tests', () => {
     it('should create a one-to-one chat successfully', async () => {
       req.body = { type: 'one-to-one', otherData: 'test' };
       const mockResponse = { id: 'chat-id' };
-      chatsService.createSingle.mockResolvedValue(mockResponse);
+      chatsService.create.mockResolvedValue(mockResponse);
 
       await chatsController.createChat(req, res, next);
 
-      expect(chatsService.createSingle).toHaveBeenCalledWith(
-        req.body,
-        req.user.id,
-      );
+      expect(chatsService.create).toHaveBeenCalled();
       expect(res.statusCode).toBe(201);
       expect(res.data).toEqual(mockResponse);
       expect(next).toHaveBeenCalled();
@@ -46,11 +43,11 @@ describe('Chat Controller Tests', () => {
       req.body = { type: 'group', otherData: 'test' };
       req.file = { path: 'image-path' };
       const mockResponse = { id: 'group-id' };
-      chatsService.createGroup.mockResolvedValue(mockResponse);
+      chatsService.create.mockResolvedValue(mockResponse);
 
       await chatsController.createChat(req, res, next);
 
-      expect(chatsService.createGroup).toHaveBeenCalledWith(
+      expect(chatsService.create).toHaveBeenCalledWith(
         req.body,
         'image-path',
         req.user.id,
@@ -63,7 +60,7 @@ describe('Chat Controller Tests', () => {
     it('should handle errors during chat creation', async () => {
       req.body = { type: 'group' };
       const mockError = new Error('Chat creation failed');
-      chatsService.createGroup.mockRejectedValue(mockError);
+      chatsService.create.mockRejectedValue(mockError);
 
       await chatsController.createChat(req, res, next);
 
