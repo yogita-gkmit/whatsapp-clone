@@ -16,13 +16,6 @@ const userIdParamSchema = Joi.object({
 
 const createChatBodySchema = Joi.object({
 	type: Joi.string().valid('one-to-one', 'group').required(),
-	// user_ids: Joi
-	// 	.items(Joi.string().uuid().required())
-	// 	.when('type', {
-	// 		is: 'one-to-one',
-	// 		then: Joi.array().length(1).required(),
-	// 		otherwise: Joi.array().min(1).required(),
-	// 	}),
 	user_ids: Joi.when('type', {
 		is: 'one-to-one',
 		then: Joi.string().uuid().required(),
