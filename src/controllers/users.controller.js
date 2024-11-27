@@ -45,10 +45,16 @@ async function specificProfile(req, res, next) {
 
 async function editMyProfile(req, res, next) {
 	try {
-		const id = req.user.id;
+		const loggedInid = req.user.id;
+		const { id } = req.params;
 		const image = req.file?.path;
 		const payload = req.body;
-		const response = await usersService.editProfile(id, image, payload);
+		const response = await usersService.editProfile(
+			loggedInid,
+			id,
+			image,
+			payload,
+		);
 		res.statusCode = 200;
 		res.data = response;
 		next();

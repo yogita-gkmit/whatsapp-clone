@@ -71,7 +71,7 @@ async function editAdmin(req, res, next) {
 		const { id } = req.params;
 		const loggedInId = req.user.id;
 		const payload = req.body;
-		const response = await chatsService.editrole(id, loggedInId, payload);
+		const response = await chatsService.editRole(id, loggedInId, payload);
 		res.statusCode = 202;
 		res.data = response;
 		next();

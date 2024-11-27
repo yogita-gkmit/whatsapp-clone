@@ -13,7 +13,7 @@ async function register(req, res) {
 	}
 }
 
-async function sendOTP(req, res) {
+async function sendOtp(req, res) {
 	try {
 		const payload = req.body;
 		const response = await authServices.sendOtp(payload);
@@ -28,11 +28,11 @@ async function sendOTP(req, res) {
 	}
 }
 
-async function verifyOTP(req, res) {
+async function verifyOtp(req, res) {
 	try {
 		const payload = req.body;
 		const token = await authServices.verifyOtp(payload);
-		res.status(200).json({ message: 'User verified successfully', token });
+		res.status(200).json({ token: token });
 	} catch (error) {
 		console.log(error);
 		const statusCode = error.statusCode || 400;
@@ -48,12 +48,10 @@ async function logout(req, res) {
 			message: result.message || 'Successfully logged out',
 		});
 	} catch (error) {
-		/* istanbul ignore next */
 		console.log(error);
-		/* istanbul ignore next */
 		const statusCode = error.statusCode || 400;
 		res.status(statusCode).json({ message: error.message });
 	}
 }
 
-module.exports = { register, sendOTP, verifyOTP, logout };
+module.exports = { register, sendOtp, verifyOtp, logout };
