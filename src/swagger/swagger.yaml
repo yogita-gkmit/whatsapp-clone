@@ -1,0 +1,464 @@
+openapi: 3.0.0
+info:
+  title: whatsapp-clone
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+components:
+  securitySchemes:
+    apikeyAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+
+security:
+  - apikeyAuth: []
+
+tags:
+  - name: auth
+  - name: user
+  - name: chat
+  - name: chat > user-chat
+  - name: chat > message
+
+paths:
+  /api/auth/sendOtp:
+    post:
+      tags:
+        - auth
+      summary: send otp
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                email: jyotideveda02@gmail.com
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+
+  /api/auth/verifyOtp:
+    post:
+      tags:
+        - auth
+      summary: verify otp to login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                email: jyotideveda02@gmail.com
+                otp: '531065'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+
+  /api/auth/logout:
+    post:
+      tags:
+        - auth
+      summary: logout user
+      security:
+        - apikeyAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+
+  /api/auth/register:
+    post:
+      tags:
+        - auth
+      summary: register new user
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: aditya
+                email:
+                  type: string
+                  example: neww@gmail.com
+                about:
+                  type: string
+                  example: blah blah
+                image:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+
+  /api/users/me:
+    get:
+      tags:
+        - user
+      summary: display logged in user
+      security:
+        - apikeyAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+            
+  /api/users/{id}:
+    put:
+      tags:
+        - user
+      summary: edit logged in user's profile
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: aditya singh
+                image:
+                  type: string
+                  format: binary
+                about:
+                  type: string
+                  example: my fav book, you should give it a try please
+                email:
+                  type: string
+                  example: jyotideveda02@gmail.com
+      security:
+        - apikeyAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+
+  /api/users/{id}:
+    get:
+      tags:
+        - user
+      summary: display specific user
+      parameters:
+        - name: id
+          in: path
+          schema:
+            type: string
+          required: true
+          example: c714c421-77c2-4998-998a-fd831457f3da
+      security:
+        - apikeyAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+
+  /api/users:
+    get:
+      tags:
+        - user
+      summary: show contacts
+      security:
+        - apikeyAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+
+  /api/users/{id}/chats:
+    get:
+      tags:
+        - user
+      summary: inbox
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+          example: '2'
+        - name: id
+          in: path
+          schema:
+            type: string
+          required: true
+          example: 473dfa3c-488b-4d44-9c96-4d03ced5e098
+      security:
+        - apikeyAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+
+  /api/chats/{id}/users:
+    put:
+      tags:
+        - chat > user-chat
+      summary: to edit the group admin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                user_ids:
+                  - c714c421-77c2-4998-998a-fd831457f3da
+      parameters:
+        - name: id
+          in: path
+          schema:
+            type: string
+          required: true
+          example: 'd6e1d292-6ba1-4156-9798-7ccd13535ef8'
+      security:
+        - apikeyAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+
+  /api/chats/{id}/emailInvite:
+    post:
+      tags:
+        - chat > user-chat
+      summary: to send email invite
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                user_id: 2b3364a2-41d4-44a6-bc3f-36870a88759c
+      parameters:
+        - name: id
+          in: path
+          schema:
+            type: string
+          required: true
+          example: 'd6e1d292-6ba1-4156-9798-7ccd13535ef8'
+      security:
+        - apikeyAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+
+  /api/chats/{id}/usersChats:
+    get:
+      tags:
+        - chat > user-chat
+      summary: add user to chat after accepting email
+      parameters:
+        - name: token
+          in: query
+          schema:
+            type: string
+          example: >-
+            Z1NK3wDYJOiTbuboW8W8Jtq%2BiDs%2BtWTmkLVO8w4RcsWX1gQKKdAcuN%2BxWF8tbF0SLI2RFZJ2qhUHVLZvcmPDDHMAdE7HD039iAF26LfZ
+        - name: id
+          in: path
+          schema:
+            type: string
+          required: true
+          example: 'd6e1d292-6ba1-4156-9798-7ccd13535ef8'
+      security:
+        - apikeyAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+
+  /api/chats/{id}/users/{userId}:
+    delete:
+      tags:
+        - chat > user-chat
+      summary: soft deleted user from chats (users_chats table)
+      parameters:
+        - name: id
+          in: path
+          schema:
+            type: string
+          required: true
+          example: 'd6e1d292-6ba1-4156-9798-7ccd13535ef8'
+        - name: userId
+          in: path
+          schema:
+            type: string
+          required: true
+          example: 621b82fc-a437-45d6-b8d7-29ea1570ca3b
+      security:
+        - apikeyAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+
+  /api/chats/{id}/messages:
+    post:
+      tags:
+        - chat > message
+      summary: create message
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: yooo
+                media:
+                  type: string
+                  format: binary
+      parameters:
+        - name: id
+          in: path
+          schema:
+            type: string
+          required: true
+          example: 'd6e1d292-6ba1-4156-9798-7ccd13535ef8'
+      security:
+        - apikeyAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+    get:
+      tags:
+        - chat > message
+      summary: to display all messages of a chat
+      parameters:
+        - name: filter
+          in: query
+          schema:
+            type: string
+          example: message
+        - name: id
+          in: path
+          schema:
+            type: string
+          required: true
+          example: 'd6e1d292-6ba1-4156-9798-7ccd13535ef8'
+      security:
+        - apikeyAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+
+            /api/chats:
+  post:
+    tags:
+      - chat
+    summary: create chat group
+    requestBody:
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                example: single genius
+              description:
+                type: string
+                example: single ladies are genius
+              type:
+                type: string
+                example: group
+              image:
+                type: string
+                format: binary
+              user_ids:
+                type: string
+    responses:
+      '200':
+        description: Successful response
+        content:
+          application/json: {}
+
+  /api/chats/{id}:
+    get:
+      tags:
+        - chat
+      summary: get chat one-to-one chat information
+      parameters:
+        - name: id
+          in: path
+          schema:
+            type: string
+          required: true
+          example: 'd6e1d292-6ba1-4156-9798-7ccd13535ef8'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+
+    put:
+      tags:
+        - chat
+      summary: edit chat details
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                description:
+                  type: string
+                  example: hey there!!!
+                image:
+                  type: string
+                  format: binary
+                name:
+                  type: string
+                  example: new
+      parameters:
+        - name: id
+          in: path
+          schema:
+            type: string
+          required: true
+          example: 'd6e1d292-6ba1-4156-9798-7ccd13535ef8'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+
+    delete:
+      tags:
+        - chat
+      summary: delete chat
+      parameters:
+        - name: id
+          in: path
+          schema:
+            type: string
+          required: true
+          example: bc798efb-25b9-44fe-b08e-073c7d60bf1b
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
